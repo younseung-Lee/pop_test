@@ -4,214 +4,49 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>로그인</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        .login-container {
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .login-title {
-            text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 28px;
-            font-weight: 600;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: 500;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 5px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .form-group input.error {
-            border-color: #e74c3c;
-        }
-
-        .login-button {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .login-button:hover {
-            transform: translateY(-2px);
-        }
-
-        .login-button:active {
-            transform: translateY(0);
-        }
-
-        .error-message {
-            background-color: #fee;
-            color: #c33;
-            padding: 12px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            text-align: center;
-            border: 1px solid #fcc;
-            font-size: 14px;
-            animation: shake 0.5s;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-            20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-
-        .form-footer {
-            margin-top: 20px;
-            text-align: center;
-            color: #777;
-            font-size: 14px;
-        }
-
-        .password-toggle {
-            position: relative;
-        }
-
-        .password-toggle-btn {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: #667eea;
-            cursor: pointer;
-            font-size: 14px;
-            padding: 5px;
-        }
-
-        .password-toggle-btn:hover {
-            color: #764ba2;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/login.css">
 </head>
 <body>
-    <div class="login-container">
-        <h1 class="login-title">🔐 로그인</h1>
-        
-        <!-- 에러 메시지 표시 -->
-        <div th:if="${error}" class="error-message" th:text="${error}"></div>
-        
-        <form method="post" action="/login" id="loginForm">
-            <div class="form-group">
-                <label for="id">아이디</label>
-                <input type="text" 
-                       id="id" 
-                       name="id" 
-                       required 
-                       placeholder="아이디를 입력하세요"
-                       th:value="${id}"
-                       th:class="${error} ? 'error' : ''"
-                       autocomplete="username">
-            </div>
-            
-            <div class="form-group password-toggle">
-                <label for="pw">비밀번호</label>
-                <input type="password" 
-                       id="pw" 
-                       name="pw" 
-                       required 
-                       placeholder="비밀번호를 입력하세요"
-                       th:class="${error} ? 'error' : ''"
-                       autocomplete="current-password">
-                <button type="button" class="password-toggle-btn" onclick="togglePassword()">
-                    👁️
-                </button>
-            </div>
-            
-            <button type="submit" class="login-button">로그인</button>
-            
-            <div class="form-footer">
-                <p>POP 시스템에 오신 것을 환영합니다</p>
-            </div>
-        </form>
-    </div>
+<div class="login-container">
+    <h1 class="login-title">POP 등록 페이지</h1>
 
-    <script>
-        // 비밀번호 표시/숨김 토글
-        function togglePassword() {
-            const pwInput = document.getElementById('pw');
-            const toggleBtn = document.querySelector('.password-toggle-btn');
-            
-            if (pwInput.type === 'password') {
-                pwInput.type = 'text';
-                toggleBtn.textContent = '🙈';
-            } else {
-                pwInput.type = 'password';
-                toggleBtn.textContent = '👁️';
-            }
-        }
+    <div th:if="${error}" class="error-message" th:text="${error}"></div>
 
-        // 폼 제출 시 유효성 검사
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            const id = document.getElementById('id').value.trim();
-            const pw = document.getElementById('pw').value.trim();
-            
-            if (id === '' || pw === '') {
-                e.preventDefault();
-                alert('아이디와 비밀번호를 모두 입력해주세요.');
-                return false;
-            }
-        });
+    <form method="post" action="/login" id="loginForm">
+        <div class="form-group">
+            <label for="id">아이디</label>
+            <input type="text"
+                   id="id"
+                   name="id"
+                   required
+                   placeholder="아이디를 입력하세요"
+                   th:value="${id}"
+                   th:class="${error} ? 'error' : ''"
+                   autocomplete="username">
+        </div>
 
-        // 페이지 로드 시 아이디 입력창에 포커스
-        window.onload = function() {
-            const idInput = document.getElementById('id');
-            if (idInput.value === '') {
-                idInput.focus();
-            } else {
-                document.getElementById('pw').focus();
-            }
-        };
-    </script>
+        <div class="form-group password-toggle">
+            <label for="pw">비밀번호</label>
+            <input type="password"
+                   id="pw"
+                   name="pw"
+                   required
+                   placeholder="비밀번호를 입력하세요"
+                   th:class="${error} ? 'error' : ''"
+                   autocomplete="current-password">
+            <button type="button" class="password-toggle-btn" onclick="togglePassword()">
+                비밀번호 보기👁️
+            </button>
+        </div>
+
+        <button type="submit" class="login-button">로그인</button>
+
+        <div class="form-footer">
+            <p>POP 시스템에 오신 것을 환영합니다</p>
+        </div>
+    </form>
+</div>
+
+<script src="/js/login.js"></script>
 </body>
 </html>
