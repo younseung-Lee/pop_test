@@ -76,7 +76,7 @@
           AND t.use_yn = 'Y'
         ORDER BY
             r.last_used_dt DESC
-            LIMIT #{limit}
+        LIMIT #{limit}
     </select>
 
 </mapper>
