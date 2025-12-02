@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.pop.mapper.PopTemplateMapper">
+
+    <!-- 공통 resultMap -->
+    <resultMap id="PopTemplateMap" type="com.example.pop.vo.PopTemplateVO">
+        <id     property="templateId"   column="template_id"/>
+        <result property="templateName" column="template_name"/>
+        <result property="templateImage" column="template_image"/>
+        <result property="layoutType"   column="layout_type"/>
+        <result property="category"     column="category"/>
+        <result property="useYn"        column="use_yn"/>
+    </resultMap>
+
+    <!-- 1) 템플릿 리스트 조회: 전체 / 레이아웃 / 카테고리 필터 -->
+    <select id="selectTemplates" resultMap="PopTemplateMap">
+        SELECT
+        template_id,
+        template_name,
+        template_image,
+        layout_type,
+        category,
+        use_yn
+        FROM
+        pop_template
+        <where>
+            use_yn = 'Y'
+            <if test="layoutType != null and layoutType != ''">
+                AND layout_type = #{layoutType}
+            </if>
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+        </where>
+        ORDER BY template_id DESC
+        <!-- 필요하면 LIMIT 붙이기
+        LIMIT 0, 50
+        -->
+    </select>
+
+    <!-- 2) 템플릿 개수 조회 (totalCount용) -->
+    <select id="countTemplates" resultType="int">
+        SELECT
+        COUNT(*)
+        FROM
+        pop_template
+        <where>
+            use_yn = 'Y'
+            <if test="layoutType != null and layoutType != ''">
+                AND layout_type = #{layoutType}
+            </if>
+            <if test="category != null and category != ''">
+                AND category = #{category}
+            </if>
+        </where>
+    </select>
+
+    <!-- 3) 최근 사용 템플릿 조회 -->
+    <select id="selectRecentTemplates" resultMap="PopTemplateMap">
+        SELECT
+            t.template_id,
+            t.template_name,
+            t.template_image,
+            t.layout_type,
+            t.category,
+            t.use_yn
+        FROM
+            pop_template_recent r
+                JOIN pop_template t
+                     ON r.template_id = t.template_id
+        WHERE
+            r.mart_id = #{martId}
+          AND t.use_yn = 'Y'
+        ORDER BY
+            r.last_used_dt DESC
+            LIMIT #{limit}
+    </select>
+
+</mapper>

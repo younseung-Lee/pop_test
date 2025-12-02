@@ -4,6 +4,18 @@ const PopEditor = (() => {
     let editCanvas;
     let previewCanvas;
 
+    // 레이아웃별 고정 캔버스 사이즈
+    const LAYOUT_SIZE_MAP = {
+        VERTICAL:   { width: 800,  height: 1200 },
+        HORIZONTAL: { width: 1200, height: 800  },
+        SHOWCARD:   { width: 600,  height: 600  }
+    };
+
+    function getCanvasSizeForLayout(layoutType) {
+        const lt = layoutType || 'VERTICAL';
+        return LAYOUT_SIZE_MAP[lt] || { width: 800, height: 600 };
+    }
+
     // ===== 캔버스 초기화 =====
     function initCanvases() {
         editCanvas = new fabric.Canvas('editCanvas', {
@@ -206,8 +218,8 @@ const PopEditor = (() => {
         if (!editCanvas || !el) return;
 
         const bgUrl = el.getAttribute('data-bg');
-        const w = parseInt(el.getAttribute('data-w') || '800', 10);
-        const h = parseInt(el.getAttribute('data-h') || '600', 10);
+        const layoutType = el.getAttribute('data-layout') || 'VERTICAL';
+        const { width: w, height: h } = getCanvasSizeForLayout(layoutType);
 
         editCanvas.clear();
         editCanvas.setWidth(w);
@@ -237,15 +249,121 @@ const PopEditor = (() => {
         }, { crossOrigin: 'anonymous' });
     }
 
-    // ===== 템플릿 검색 더미 =====
-    function searchTemplate() {
-        const keywordEl = document.getElementById('templateKeyword');
-        const catEl = document.getElementById('templateCategory');
+    // ===== 템플릿 필터(레이아웃+카테고리) =====
+    function filterTemplateByLayout() {
+        const layoutSel = document.getElementById('templateLayout');
+        const categorySel = document.getElementById('templateCategory');
 
-        const kw = keywordEl ? keywordEl.value.trim() : '';
-        const cat = catEl ? catEl.value : '';
+        const layoutType = layoutSel ? layoutSel.value : '';
+        const category = categorySel ? categorySel.value : '';
 
-        alert(`템플릿 검색 (백엔드 연결 예정)\n카테고리: ${cat}\n검색어: ${kw}`);
+        let url = '/api/templates';
+        const params = [];
+        if (layoutType) params.push('layoutType=' + encodeURIComponent(layoutType));
+        if (category) params.push('category=' + encodeURIComponent(category));
+        if (params.length > 0) {
+            url += '?' + params.join('&');
+        }
+
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                const grid = document.querySelector('.template-grid');
+                if (!grid) return;
+
+                grid.innerHTML = '';
+
+                const templates = data.templates || [];
+                const totalCount = typeof data.totalCount === 'number'
+                    ? data.totalCount
+                    : templates.length;
+
+                // 총 개수 표시 갱신
+                const totalEl = document.getElementById('templateTotalCount');
+                if (totalEl) {
+                    totalEl.textContent = totalCount;
+                }
+
+                // 현재 선택된 레이아웃/카테고리 라벨 갱신
+                updateFilterLabels(layoutType, category);
+
+                if (templates.length === 0) {
+                    const emptyItem = document.createElement('div');
+                    emptyItem.className = 'template-item';
+                    emptyItem.innerHTML = `
+                        <div class="template-thumb">템플릿 없음</div>
+                        <div class="template-name">조건에 해당하는 템플릿이 없습니다.</div>
+                        <div class="template-size"></div>
+                    `;
+                    grid.appendChild(emptyItem);
+                    return;
+                }
+
+                templates.forEach(tpl => {
+                    const item = document.createElement('div');
+                    item.className = 'template-item';
+                    item.setAttribute('data-template-id', tpl.templateId);
+                    item.setAttribute('data-bg', tpl.templateImage);
+                    item.setAttribute('data-layout', tpl.layoutType);
+
+                    const thumb = document.createElement('div');
+                    thumb.className = 'template-thumb';
+                    const img = document.createElement('img');
+                    img.src = tpl.templateImage;
+                    img.alt = '템플릿';
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'cover';
+                    img.style.borderRadius = '4px';
+                    thumb.appendChild(img);
+
+                    const name = document.createElement('div');
+                    name.className = 'template-name';
+                    name.textContent = tpl.templateName || '템플릿';
+
+                    const size = document.createElement('div');
+                    size.className = 'template-size';
+                    size.textContent = ''; // 필요하면 레이아웃/카테고리 등 표시
+
+                    item.appendChild(thumb);
+                    item.appendChild(name);
+                    item.appendChild(size);
+
+                    grid.appendChild(item);
+                });
+            })
+            .catch(err => {
+                console.error('템플릿 조회 실패', err);
+                alert('템플릿 조회 중 오류가 발생했습니다.');
+            });
+    }
+
+    function updateFilterLabels(layoutType, category) {
+        const layoutLabelEl = document.getElementById('currentLayoutLabel');
+        const categoryLabelEl = document.getElementById('currentCategoryLabel');
+
+        const layoutLabelMap = {
+            '': '전체 레이아웃',
+            'VERTICAL': '세로형',
+            'HORIZONTAL': '가로형',
+            'SHOWCARD': '쇼카드'
+        };
+
+        const categoryLabelMap = {
+            '': '전체 카테고리',
+            '봄': '봄',
+            '여름': '여름',
+            '가을': '가을',
+            '겨울': '겨울',
+            '명절': '명절'
+        };
+
+        if (layoutLabelEl) {
+            layoutLabelEl.textContent = layoutLabelMap[layoutType || ''] || '전체 레이아웃';
+        }
+        if (categoryLabelEl) {
+            categoryLabelEl.textContent = categoryLabelMap[category || ''] || '전체 카테고리';
+        }
     }
 
     // ===== 저장 더미 =====
@@ -261,10 +379,16 @@ const PopEditor = (() => {
         initCanvases();
         bindImageUpload();
 
-        // 템플릿 카드 클릭
-        document.querySelectorAll('.template-item').forEach((el) => {
-            el.addEventListener('click', () => loadTemplate(el));
-        });
+        // 템플릿 카드 클릭: 이벤트 위임
+        const templateList = document.getElementById('templateList');
+        if (templateList) {
+            templateList.addEventListener('click', (e) => {
+                const item = e.target.closest('.template-item');
+                if (item) {
+                    loadTemplate(item);
+                }
+            });
+        }
 
         // 사이드바 탭 전환 (UI만)
         document.querySelectorAll('.sidebar-tab').forEach(tab => {
@@ -285,7 +409,7 @@ const PopEditor = (() => {
         bringForward,
         sendBackward,
         loadTemplate,
-        searchTemplate,
+        filterTemplateByLayout,
         saveWork
     };
 })();
