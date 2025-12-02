@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,6 +18,7 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api")
 public class TemplateController {
 
     private final TemplateService templateService;
@@ -48,7 +50,7 @@ public class TemplateController {
             @RequestParam(defaultValue = "6") int limit,
             HttpSession session
     ) {
-        // 🔹 세션 키 이름은 실제 프로젝트에 맞게 변경 (예: "user", "loginUser" 등)
+        // 세션 키 이름은 실제 프로젝트에 맞게 변경 (예: "user", "loginUser" 등)
         MartIpVO user = (MartIpVO) session.getAttribute("loginUser");
         if (user == null) {
             throw new RuntimeException("로그인 정보가 없습니다.");
