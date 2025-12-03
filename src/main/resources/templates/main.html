@@ -32,10 +32,20 @@
             <option value="Malgun Gothic">맑은 고딕</option>
         </select>
         <select class="toolbar-select" id="fontSizeSelect">
-            <option value="36">36</option>
-            <option value="24">24</option>
+            <option value="12">12</option>
+            <option value="14">14</option>
+            <option value="16">16</option>
             <option value="18">18</option>
+            <option value="24">24</option>
+            <option value="28">28</option>
+            <option value="32">32</option>
+            <option value="36" selected>36</option>
+            <option value="48">48</option>
+            <option value="60">60</option>
+            <option value="72">72</option>
+            <option value="96">96</option>
         </select>
+        <button class="toolbar-btn" type="button" onclick="PopEditor.applyTextStyle()">폰트 적용</button>
     </div>
     <div class="toolbar-section">
         <button class="toolbar-btn" type="button"><strong>가</strong></button>
@@ -49,6 +59,14 @@
         <button class="toolbar-btn" type="button" onclick="PopEditor.addShape('rectangle')">□ 사각형</button>
         <button class="toolbar-btn" type="button" onclick="PopEditor.addShape('circle')">○ 원형</button>
         <button class="toolbar-btn" type="button" onclick="PopEditor.addImage()">🖼️ 이미지불러오기</button>
+    </div>
+    <div class="toolbar-section">
+        <label style="font-size: 14px; margin-right: 5px;">채우기:</label>
+        <input type="color" id="fillColorPicker" value="#ffffff" style="width: 40px; height: 30px; border: 1px solid #ddd; cursor: pointer;">
+        <label style="font-size: 14px; margin: 0 5px;">테두리:</label>
+        <input type="color" id="strokeColorPicker" value="#000000" style="width: 40px; height: 30px; border: 1px solid #ddd; cursor: pointer;">
+        <button class="toolbar-btn" type="button" onclick="PopEditor.applyColors()">색상 적용</button>
+        <button class="toolbar-btn" type="button" onclick="PopEditor.removeColors()">색상 제거</button>
     </div>
     <div class="toolbar-section">
         <button class="toolbar-btn" type="button" onclick="PopEditor.deleteSelected()">삭제</button>
