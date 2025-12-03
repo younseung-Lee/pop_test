@@ -125,7 +125,7 @@ const PopEditor = (() => {
                 radius: 75,
                 left: 150,
                 top: 150,
-                fill: '#667eea',
+                fill: 'transparent',  // 투명 (색없음)
                 stroke: '#000000',
                 strokeWidth: 2
             });
@@ -135,7 +135,7 @@ const PopEditor = (() => {
                 top: 150,
                 width: 150,
                 height: 150,
-                fill: '#667eea',
+                fill: 'transparent',  // 투명 (색없음)
                 stroke: '#000000',
                 strokeWidth: 2
             });
@@ -192,6 +192,93 @@ const PopEditor = (() => {
             updateEmptyMessage();
             syncPreview();
         }
+    }
+
+    // ===== 색상 적용 =====
+    function applyColors() {
+        if (!editCanvas) return;
+        const obj = editCanvas.getActiveObject();
+        if (!obj) {
+            alert('색상을 적용할 객체를 먼저 선택해주세요.');
+            return;
+        }
+
+        const fillColorPicker = document.getElementById('fillColorPicker');
+        const strokeColorPicker = document.getElementById('strokeColorPicker');
+
+        const fillColor = fillColorPicker ? fillColorPicker.value : '#ffffff';
+        const strokeColor = strokeColorPicker ? strokeColorPicker.value : '#000000';
+
+        // 텍스트는 fill만 적용
+        if (obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text') {
+            obj.set('fill', fillColor);
+        } else {
+            // 도형은 fill과 stroke 모두 적용
+            obj.set({
+                fill: fillColor,
+                stroke: strokeColor,
+                strokeWidth: obj.strokeWidth || 2
+            });
+        }
+
+        editCanvas.renderAll();
+        syncPreview();
+    }
+
+    // ===== 색상 제거 (투명하게) =====
+    function removeColors() {
+        if (!editCanvas) return;
+        const obj = editCanvas.getActiveObject();
+        if (!obj) {
+            alert('색상을 제거할 객체를 먼저 선택해주세요.');
+            return;
+        }
+
+        // 텍스트는 fill만 제거하지 않음 (검은색 유지)
+        if (obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text') {
+            alert('텍스트의 색상은 제거할 수 없습니다.');
+            return;
+        }
+
+        // 도형은 fill을 투명으로, stroke는 유지
+        obj.set({
+            fill: 'transparent',
+            stroke: obj.stroke || '#000000',
+            strokeWidth: obj.strokeWidth || 2
+        });
+
+        editCanvas.renderAll();
+        syncPreview();
+    }
+
+    // ===== 텍스트 스타일 적용 (폰트, 크기) =====
+    function applyTextStyle() {
+        if (!editCanvas) return;
+        const obj = editCanvas.getActiveObject();
+        if (!obj) {
+            alert('폰트를 적용할 텍스트를 먼저 선택해주세요.');
+            return;
+        }
+
+        // 텍스트 객체인지 확인
+        if (obj.type !== 'textbox' && obj.type !== 'text' && obj.type !== 'i-text') {
+            alert('텍스트 객체만 폰트를 변경할 수 있습니다.');
+            return;
+        }
+
+        const fontSizeSelect = document.getElementById('fontSizeSelect');
+        const fontFamilySelect = document.getElementById('fontFamilySelect');
+
+        const fontSize = fontSizeSelect ? parseInt(fontSizeSelect.value, 10) : 36;
+        const fontFamily = fontFamilySelect ? fontFamilySelect.value : 'Malgun Gothic';
+
+        obj.set({
+            fontSize: fontSize,
+            fontFamily: fontFamily
+        });
+
+        editCanvas.renderAll();
+        syncPreview();
     }
 
     // ===== 앞으로, 뒤로 =====
@@ -378,6 +465,9 @@ const PopEditor = (() => {
     document.addEventListener('DOMContentLoaded', () => {
         initCanvases();
         bindImageUpload();
+        bindColorPickerSync();
+
+        filterTemplateByLayout();
 
         // 템플릿 카드 클릭: 이벤트 위임
         const templateList = document.getElementById('templateList');
@@ -399,6 +489,69 @@ const PopEditor = (() => {
         });
     });
 
+    // ===== 색상 피커 동기화 =====
+    function bindColorPickerSync() {
+        if (!editCanvas) return;
+
+        // 객체 선택 시 색상 피커 및 폰트 설정 업데이트
+        editCanvas.on('selection:created', () => {
+            updateColorPickers();
+            updateFontSettings();
+        });
+        editCanvas.on('selection:updated', () => {
+            updateColorPickers();
+            updateFontSettings();
+        });
+    }
+
+    function updateColorPickers() {
+        if (!editCanvas) return;
+        const obj = editCanvas.getActiveObject();
+        if (!obj) return;
+
+        const fillColorPicker = document.getElementById('fillColorPicker');
+        const strokeColorPicker = document.getElementById('strokeColorPicker');
+
+        // fill 색상 업데이트
+        if (obj.fill && obj.fill !== 'transparent' && typeof obj.fill === 'string') {
+            if (fillColorPicker) {
+                fillColorPicker.value = obj.fill;
+            }
+        }
+
+        // stroke 색상 업데이트
+        if (obj.stroke && typeof obj.stroke === 'string') {
+            if (strokeColorPicker) {
+                strokeColorPicker.value = obj.stroke;
+            }
+        }
+    }
+
+    // ===== 폰트 설정 동기화 =====
+    function updateFontSettings() {
+        if (!editCanvas) return;
+        const obj = editCanvas.getActiveObject();
+        if (!obj) return;
+
+        // 텍스트 객체가 아니면 리턴
+        if (obj.type !== 'textbox' && obj.type !== 'text' && obj.type !== 'i-text') {
+            return;
+        }
+
+        const fontSizeSelect = document.getElementById('fontSizeSelect');
+        const fontFamilySelect = document.getElementById('fontFamilySelect');
+
+        // 폰트 크기 업데이트
+        if (obj.fontSize && fontSizeSelect) {
+            fontSizeSelect.value = obj.fontSize.toString();
+        }
+
+        // 폰트 패밀리 업데이트
+        if (obj.fontFamily && fontFamilySelect) {
+            fontFamilySelect.value = obj.fontFamily;
+        }
+    }
+
     // 외부에서 접근 가능하게 반환
     return {
         newWork,
@@ -406,6 +559,9 @@ const PopEditor = (() => {
         addShape,
         addImage,
         deleteSelected,
+        applyColors,
+        removeColors,
+        applyTextStyle,
         bringForward,
         sendBackward,
         loadTemplate,
