@@ -28,7 +28,8 @@ const PopEditor = (() => {
             selection: false
         });
 
-        editCanvas.setBackgroundColor('#ffffff', editCanvas.renderAll.bind(editCanvas));
+        editCanvas.backgroundColor = '#ffffff';
+        editCanvas.renderAll();
         updateEmptyMessage();
         syncPreview();
 
@@ -59,20 +60,25 @@ const PopEditor = (() => {
     }
 
     // ===== 미리보기 동기화 =====
-    function syncPreview() {
+    async function syncPreview() {
         if (!editCanvas || !previewCanvas) return;
 
         const json = editCanvas.toJSON();
         previewCanvas.clear();
 
-        previewCanvas.loadFromJSON(json, () => {
+        try {
+            // v6: loadFromJSON은 Promise를 반환
+            await previewCanvas.loadFromJSON(json);
+            
             const scaleX = previewCanvas.getWidth() / editCanvas.getWidth();
             const scaleY = previewCanvas.getHeight() / editCanvas.getHeight();
             const zoom = Math.min(scaleX, scaleY);
 
             previewCanvas.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
             previewCanvas.renderAll();
-        });
+        } catch (error) {
+            console.error('미리보기 동기화 실패:', error);
+        }
     }
 
     // ===== 새 문서 =====
@@ -81,9 +87,9 @@ const PopEditor = (() => {
         if (!confirm('현재 작업 내용을 지우고 새 문서를 시작할까요?')) return;
 
         editCanvas.clear();
-        editCanvas.setWidth(800);
-        editCanvas.setHeight(600);
-        editCanvas.setBackgroundColor('#ffffff', editCanvas.renderAll.bind(editCanvas));
+        editCanvas.setDimensions({ width: 800, height: 600 });
+        editCanvas.backgroundColor = '#ffffff';
+        editCanvas.renderAll();
 
         updateEmptyMessage();
         syncPreview();
@@ -162,13 +168,18 @@ const PopEditor = (() => {
         const imageInput = document.getElementById('imageFileInput');
         if (!imageInput) return;
 
-        imageInput.addEventListener('change', (e) => {
+        imageInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = (event) => {
-                fabric.Image.fromURL(event.target.result, (img) => {
+            reader.onload = async (event) => {
+                try {
+                    // v6: fabric.Image.fromURL은 Promise를 반환
+                    const img = await fabric.FabricImage.fromURL(event.target.result, {
+                        crossOrigin: 'anonymous'
+                    });
+                    
                     img.scaleToWidth(200);
                     img.set({ left: 100, top: 100 });
                     editCanvas.add(img);
@@ -176,7 +187,10 @@ const PopEditor = (() => {
                     editCanvas.renderAll();
                     updateEmptyMessage();
                     syncPreview();
-                }, { crossOrigin: 'anonymous' });
+                } catch (error) {
+                    console.error('이미지 로드 실패:', error);
+                    alert('이미지를 불러오는데 실패했습니다.');
+                }
             };
             reader.readAsDataURL(file);
         });
@@ -286,7 +300,7 @@ const PopEditor = (() => {
         if (!editCanvas) return;
         const obj = editCanvas.getActiveObject();
         if (!obj) return;
-        editCanvas.bringForward(obj);
+        editCanvas.bringObjectForward(obj);
         editCanvas.renderAll();
         syncPreview();
     }
@@ -295,13 +309,13 @@ const PopEditor = (() => {
         if (!editCanvas) return;
         const obj = editCanvas.getActiveObject();
         if (!obj) return;
-        editCanvas.sendBackwards(obj);
+        editCanvas.sendObjectBackwards(obj);
         editCanvas.renderAll();
         syncPreview();
     }
 
     // ===== 템플릿 로드 =====
-    function loadTemplate(el) {
+    async function loadTemplate(el) {
         if (!editCanvas || !el) return;
 
         const bgUrl = el.getAttribute('data-bg');
@@ -309,31 +323,41 @@ const PopEditor = (() => {
         const { width: w, height: h } = getCanvasSizeForLayout(layoutType);
 
         editCanvas.clear();
-        editCanvas.setWidth(w);
-        editCanvas.setHeight(h);
+        editCanvas.setDimensions({ width: w, height: h });
 
         if (!bgUrl) {
-            editCanvas.setBackgroundColor('#ffffff', editCanvas.renderAll.bind(editCanvas));
+            editCanvas.backgroundColor = '#ffffff';
+            editCanvas.renderAll();
             updateEmptyMessage();
             syncPreview();
             return;
         }
 
-        fabric.Image.fromURL(bgUrl, (img) => {
+        try {
+            // v6: fabric.Image.fromURL은 Promise를 반환
+            const img = await fabric.FabricImage.fromURL(bgUrl, {
+                crossOrigin: 'anonymous'
+            });
+
             const scaleX = w / img.width;
             const scaleY = h / img.height;
             const scale = Math.min(scaleX, scaleY);
 
-            editCanvas.setBackgroundImage(img, editCanvas.renderAll.bind(editCanvas), {
+            img.set({
                 scaleX: scale,
                 scaleY: scale,
                 top: 0,
                 left: 0
             });
 
+            editCanvas.backgroundImage = img;
+            editCanvas.renderAll();
             updateEmptyMessage();
             syncPreview();
-        }, { crossOrigin: 'anonymous' });
+        } catch (error) {
+            console.error('템플릿 로드 실패:', error);
+            alert('템플릿을 불러오는데 실패했습니다.');
+        }
     }
 
     // ===== 템플릿 필터(레이아웃+카테고리) =====
