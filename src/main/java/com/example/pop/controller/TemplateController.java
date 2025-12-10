@@ -1,6 +1,6 @@
 package com.example.pop.controller;
 
-import com.example.pop.service.TemplateService;
+import com.example.pop.service.template.TemplateService;
 import com.example.pop.vo.MartIpVO;
 import com.example.pop.vo.PopTemplateVO;
 import jakarta.servlet.http.HttpSession;

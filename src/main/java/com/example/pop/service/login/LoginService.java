@@ -1,8 +1,7 @@
-package com.example.pop.service;
+package com.example.pop.service.login;
 
 import jakarta.servlet.http.HttpSession;
 
-import java.util.List;
 import java.util.Map;
 
 public interface LoginService {

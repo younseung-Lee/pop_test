@@ -1,4 +1,4 @@
-package com.example.pop.service;
+package com.example.pop.service.login;
 
 import com.example.pop.mapper.LoginMapper;
 import jakarta.servlet.http.HttpSession;

@@ -1,6 +1,6 @@
 package com.example.pop.interceptor;
 
-import com.example.pop.service.LoginService;
+import com.example.pop.service.login.LoginService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

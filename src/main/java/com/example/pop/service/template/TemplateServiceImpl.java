@@ -1,4 +1,4 @@
-package com.example.pop.service;
+package com.example.pop.service.template;
 
 import com.example.pop.mapper.PopTemplateMapper;
 import com.example.pop.vo.PopTemplateVO;

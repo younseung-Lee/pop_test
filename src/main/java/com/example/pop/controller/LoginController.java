@@ -1,7 +1,6 @@
 package com.example.pop.controller;
 
-import com.example.pop.service.LoginService;
-import com.example.pop.vo.MartIpVO;
+import com.example.pop.service.login.LoginService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +10,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.List;
 import java.util.Map;
 
 @Slf4j
