@@ -1,7 +1,6 @@
-package com.example.pop.service;
+package com.example.pop.service.template;
 
 import com.example.pop.vo.PopTemplateVO;
-import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
