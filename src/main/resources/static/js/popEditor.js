@@ -47,6 +47,65 @@ const PopEditor = (() => {
                 syncPreview();
             });
         });
+        bindCanvasPanZoom();
+    }
+
+    // ===== 확대/축소 & 팬 =====
+    function bindCanvasPanZoom() {
+        if (!editCanvas) return;
+
+        // 마우스 휠 줌
+        editCanvas.on('mouse:wheel', function (opt) {
+            const delta = opt.e.deltaY;
+            let zoom = editCanvas.getZoom();
+
+            // 휠 방향에 따라 줌 값 변경
+            zoom *= Math.pow(0.999, delta);
+
+            // 최소/최대 줌 제한 (1% ~ 2000%)
+            if (zoom > 20) zoom = 20;
+            if (zoom < 0.01) zoom = 0.01;
+
+            // 커서 위치를 기준으로 줌
+            editCanvas.zoomToPoint(
+                { x: opt.e.offsetX, y: opt.e.offsetY },
+                zoom
+            );
+
+            opt.e.preventDefault();
+            opt.e.stopPropagation();
+        });
+
+        // Alt + Drag 로 패닝
+        editCanvas.on('mouse:down', function (opt) {
+            const evt = opt.e;
+            if (evt.altKey === true) {
+                this.isDragging = true;
+                this.selection = false; // 드래그 중엔 오브젝트 선택 비활성화
+                this.lastPosX = evt.clientX;
+                this.lastPosY = evt.clientY;
+            }
+        });
+
+        editCanvas.on('mouse:move', function (opt) {
+            if (this.isDragging) {
+                const e = opt.e;
+                const vpt = this.viewportTransform;
+                // 이동량만큼 viewport 이동
+                vpt[4] += e.clientX - this.lastPosX;
+                vpt[5] += e.clientY - this.lastPosY;
+                this.requestRenderAll();
+                this.lastPosX = e.clientX;
+                this.lastPosY = e.clientY;
+            }
+        });
+
+        editCanvas.on('mouse:up', function () {
+            // 상호작용 재계산
+            this.setViewportTransform(this.viewportTransform);
+            this.isDragging = false;
+            this.selection = true;
+        });
     }
 
     // 빈 캔버스 안내 메시지 표시/숨김
@@ -89,6 +148,10 @@ const PopEditor = (() => {
         editCanvas.clear();
         editCanvas.setDimensions({ width: 800, height: 600 });
         editCanvas.backgroundColor = '#ffffff';
+        editCanvas.renderAll();
+
+        editCanvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+
         editCanvas.renderAll();
 
         updateEmptyMessage();
@@ -324,6 +387,8 @@ const PopEditor = (() => {
 
         editCanvas.clear();
         editCanvas.setDimensions({ width: w, height: h });
+
+        editCanvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
 
         if (!bgUrl) {
             editCanvas.backgroundColor = '#ffffff';
