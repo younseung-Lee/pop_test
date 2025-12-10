@@ -5,54 +5,40 @@
 <mapper namespace="com.example.pop.mapper.LoginMapper">
     
     <!-- 아이디와 비밀번호로 사용자 조회 -->
-    <select id="findByIdAndPw" resultType="com.example.pop.vo.MartIpVO">
-        select id,
-               ip,
-               now,
-               edate,
-               nm,
-               gr,
-               pw,
-               insert_dt,
-               update_dt,
-               sho_biz_tel,
-               sho_use_yn,
-               limited_order_prx,
-               mart_opening_hours,
-               mart_dvry_area,
-               mart_dvry_prx,
-               mart_address,
-               mart_bank_account,
-               mart_bank_account_owner,
-               mart_bank_nm,
-               mart_order_time,
-               mart_order_policyUp,
-               mart_order_policyDown,
-               pg_mid,
-               pg_api_key,
-               soldout_count,
-               shopping_img_used,
-               mart_parking,
-               att_yn,
-               use_mem_cmrc_yn,
-               use_appdc_yn,
-               use_pg_yn,
-               sep_pwd,
-               acct_trsfr_yn,
-               mart_main_catgy_title,
-               app_order_yn
-        FROM pop.mart_ip
-        WHERE id = #{id} 
-          AND pw = #{pw}
+    <select id="findByIdAndPw" parameterType="map" resultType="map">
+        SELECT user_seq,
+               mart_cd,
+               mart_nm,
+               unit_mart,
+               als_mart_nm,
+               user_id,
+               user_nm,
+               user_pwd,
+               used_yn,
+               user_auth,
+               reg_dt,
+               mody_dt,
+               mart_prefix_group,
+               push_token,
+               device_uuid,
+               order_letter,
+               order_sort,
+               user_password,
+               als_mart_nm2
+        FROM am_mart.users
+        WHERE user_id = #{id}
+          AND (user_pwd = #{pw})
+          AND used_yn = 'Y'
         LIMIT 1
     </select>
     
-    <!-- 아이디로 사용자 조회 -->
+
+    <!-- 아이디로 마트 IP 조회 (기존 로직 유지) -->
     <select id="findById" resultType="com.example.pop.vo.MartIpVO">
         SELECT id, pw
-        FROM pop.mart_ip
+        FROM am_mart.mart_ip
         WHERE id = #{id}
-        LIMIT 1
+            LIMIT 1
     </select>
     
 
