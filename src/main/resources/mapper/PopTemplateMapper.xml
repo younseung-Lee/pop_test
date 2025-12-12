@@ -1,82 +1,165 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.example.pop.mapper.PopTemplateMapper">
 
-    <!-- 공통 resultMap -->
+    <!-- 공통 resultMap: pop_tpl 전체 컬럼 매핑 -->
     <resultMap id="PopTemplateMap" type="com.example.pop.vo.PopTemplateVO">
-        <id     property="templateId"   column="template_id"/>
-        <result property="templateName" column="template_name"/>
-        <result property="templateImage" column="template_image"/>
-        <result property="layoutType"   column="layout_type"/>
-        <result property="category"     column="category"/>
-        <result property="useYn"        column="use_yn"/>
+        <id     property="tplSeq"      column="tpl_seq"/>
+        <result property="tplCommon"   column="tpl_common"/>
+        <result property="martCd"      column="mart_cd"/>
+        <result property="tplId"       column="tpl_id"/>
+        <result property="tplNm"       column="tpl_nm"/>
+        <result property="tplCtgyBig"  column="tpl_ctgy_big"/>
+        <result property="tplCtgyMid"  column="tpl_ctgy_mid"/>
+        <result property="tplCtgySml"  column="tpl_ctgy_sml"/>
+        <result property="tplCtgySub"  column="tpl_ctgy_sub"/>
+        <result property="layoutType"  column="layout_type"/>
+        <result property="bgImgUrl"    column="bg_img_url"/>
+        <result property="tplJson"     column="tpl_json"/>
+        <result property="isCommon"    column="is_common"/>
+        <result property="useYn"       column="use_yn"/>
+        <result property="regId"       column="reg_id"/>
+        <result property="regDt"       column="reg_dt"/>
+        <result property="modId"       column="mod_id"/>
+        <result property="modDt"       column="mod_dt"/>
     </resultMap>
 
-    <!-- 1) 템플릿 리스트 조회: 전체 / 레이아웃 / 카테고리 필터 -->
-    <select id="selectTemplates" resultMap="PopTemplateMap">
-        SELECT
-        template_id,
-        template_name,
-        template_image,
+    <!-- 공통 SELECT 컬럼 -->
+    <sql id="BaseSelectColumns">
+        tpl_seq,
+        tpl_common,
+        mart_cd,
+        tpl_id,
+        tpl_nm,
+        tpl_ctgy_big,
+        tpl_ctgy_mid,
+        tpl_ctgy_sml,
+        tpl_ctgy_sub,
         layout_type,
-        category,
-        use_yn
+        bg_img_url,
+        tpl_json,
+        is_common,
+        use_yn,
+        reg_id,
+        reg_dt,
+        mod_id,
+        mod_dt
+    </sql>
+
+<!--      1) 공통 템플릿 조회 (is_common = 'Y') -->
+    <select id="selectCommonTemplates" resultMap="PopTemplateMap">
+        SELECT
+        <include refid="BaseSelectColumns"/>
         FROM
-        pop_template
+        pop_tpl
         <where>
             use_yn = 'Y'
+            AND is_common = 'Y'
             <if test="layoutType != null and layoutType != ''">
                 AND layout_type = #{layoutType}
             </if>
-            <if test="category != null and category != ''">
-                AND category = #{category}
+            <if test="ctgyBig != null and ctgyBig != ''">
+                AND tpl_ctgy_big = #{ctgyBig}
+            </if>
+            <if test="ctgyMid != null and ctgyMid != ''">
+                AND tpl_ctgy_mid = #{ctgyMid}
+            </if>
+            <if test="ctgySml != null and ctgySml != ''">
+                AND tpl_ctgy_sml = #{ctgySml}
+            </if>
+            <if test="ctgySub != null and ctgySub != ''">
+                AND tpl_ctgy_sub = #{ctgySub}
             </if>
         </where>
-        ORDER BY template_id DESC
-        <!-- 필요하면 LIMIT 붙이기
-        LIMIT 0, 50
-        -->
+        ORDER BY tpl_seq DESC
+        <!-- MySQL 호환성을 위해 LIMIT offset, pageSize 형태 사용 -->
+        LIMIT #{offset}, #{pageSize}
     </select>
 
-    <!-- 2) 템플릿 개수 조회 (totalCount용) -->
-    <select id="countTemplates" resultType="int">
+    <select id="countCommonTemplates" resultType="int">
         SELECT
         COUNT(*)
         FROM
-        pop_template
+        pop_tpl
         <where>
             use_yn = 'Y'
+            AND is_common = 'Y'
             <if test="layoutType != null and layoutType != ''">
                 AND layout_type = #{layoutType}
             </if>
-            <if test="category != null and category != ''">
-                AND category = #{category}
+            <if test="ctgyBig != null and ctgyBig != ''">
+                AND tpl_ctgy_big = #{ctgyBig}
+            </if>
+            <if test="ctgyMid != null and ctgyMid != ''">
+                AND tpl_ctgy_mid = #{ctgyMid}
+            </if>
+            <if test="ctgySml != null and ctgySml != ''">
+                AND tpl_ctgy_sml = #{ctgySml}
+            </if>
+            <if test="ctgySub != null and ctgySub != ''">
+                AND tpl_ctgy_sub = #{ctgySub}
             </if>
         </where>
     </select>
 
-    <!-- 3) 최근 사용 템플릿 조회 -->
-    <select id="selectRecentTemplates" resultMap="PopTemplateMap">
+    <!--  2) 우리 마트 템플릿 조회 (is_common = 'N')  -->
+    <select id="selectMyTemplates" resultMap="PopTemplateMap">
         SELECT
-            t.template_id,
-            t.template_name,
-            t.template_image,
-            t.layout_type,
-            t.category,
-            t.use_yn
+        <include refid="BaseSelectColumns"/>
         FROM
-            pop_template_recent r
-                JOIN pop_template t
-                     ON r.template_id = t.template_id
-        WHERE
-            r.mart_id = #{martId}
-          AND t.use_yn = 'Y'
-        ORDER BY
-            r.last_used_dt DESC
-        LIMIT #{limit}
+        pop_tpl
+        <where>
+            use_yn = 'Y'
+            AND is_common = 'N'
+            AND mart_cd = #{martCd}
+            <if test="layoutType != null and layoutType != ''">
+                AND layout_type = #{layoutType}
+            </if>
+            <if test="ctgyBig != null and ctgyBig != ''">
+                AND tpl_ctgy_big = #{ctgyBig}
+            </if>
+            <if test="ctgyMid != null and ctgyMid != ''">
+                AND tpl_ctgy_mid = #{ctgyMid}
+            </if>
+            <if test="ctgySml != null and ctgySml != ''">
+                AND tpl_ctgy_sml = #{ctgySml}
+            </if>
+            <if test="ctgySub != null and ctgySub != ''">
+                AND tpl_ctgy_sub = #{ctgySub}
+            </if>
+        </where>
+        ORDER BY tpl_seq DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="countMyTemplates" resultType="int">
+        SELECT
+        COUNT(*)
+        FROM
+        pop_tpl
+        <where>
+            use_yn = 'Y'
+            AND is_common = 'N'
+            AND mart_cd = #{martCd}
+            <if test="layoutType != null and layoutType != ''">
+                AND layout_type = #{layoutType}
+            </if>
+            <if test="ctgyBig != null and ctgyBig != ''">
+                AND tpl_ctgy_big = #{ctgyBig}
+            </if>
+            <if test="ctgyMid != null and ctgyMid != ''">
+                AND tpl_ctgy_mid = #{ctgyMid}
+            </if>
+            <if test="ctgySml != null and ctgySml != ''">
+                AND tpl_ctgy_sml = #{ctgySml}
+            </if>
+            <if test="ctgySub != null and ctgySub != ''">
+                AND tpl_ctgy_sub = #{ctgySub}
+            </if>
+        </where>
     </select>
 
 </mapper>

@@ -6,18 +6,55 @@ import java.util.List;
 
 public interface TemplateService {
 
-    List<PopTemplateVO> getTemplates(String layoutType,String category);
+    /**
+     * 공통 템플릿 조회 (is_common = 'Y') + 페이징
+     */
+    List<PopTemplateVO> getCommonTemplates(
+            String layoutType,
+            String ctgyBig,
+            String ctgyMid,
+            String ctgySml,
+            String ctgySub,
+            int page,
+            int size
+    );
+
 
     /**
-     * 템플릿 전체 개수 (필터 포함)
+     * 공통 템플릿 전체 개수
      */
-    int getTemplateCount(String layoutType, String category);
+    int getCommonTemplateCount(
+            String layoutType,
+            String ctgyBig,
+            String ctgyMid,
+            String ctgySml,
+            String ctgySub
+    );
 
     /**
-     * 최근 사용 템플릿 조회
-     *
-     * @param martId 마트 아이디 (MartIpVO.id)
-     * @param limit  최대 개수
+     * 우리 마트 템플릿 조회 (is_common = 'N') + 페이징
      */
-    List<PopTemplateVO> getRecentTemplates(String martId, int limit);
+    List<PopTemplateVO> getMyTemplates(
+            String martCd,
+            String layoutType,
+            String ctgyBig,
+            String ctgyMid,
+            String ctgySml,
+            String ctgySub,
+            int page,
+            int size
+    );
+
+    /**
+     * 우리 마트 템플릿 전체 개수
+     */
+    int getMyTemplateCount(
+            String martCd,
+            String layoutType,
+            String ctgyBig,
+            String ctgyMid,
+            String ctgySml,
+            String ctgySub
+    );
+
 }

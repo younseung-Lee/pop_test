@@ -9,21 +9,54 @@ import java.util.List;
 @Mapper
 public interface PopTemplateMapper {
 
-    // 템플릿 리스트 조회 (전체 / 레이아웃 / 카테고리 필터)
-    List<PopTemplateVO> selectTemplates(
+    /**
+     * 공통 템플릿 리스트 조회 (is_common = 'Y')
+     */
+    List<PopTemplateVO> selectCommonTemplates(
             @Param("layoutType") String layoutType,
-            @Param("category") String category
+            @Param("ctgyBig") String ctgyBig,
+            @Param("ctgyMid") String ctgyMid,
+            @Param("ctgySml") String ctgySml,
+            @Param("ctgySub") String ctgySub,
+            @Param("offset") int offset,
+            @Param("pageSize") int pageSize
     );
 
-    // 전체 개수 (paging이나 화면에 총 개수 보여줄 때)
-    int countTemplates(
+    /**
+     * 공통 템플릿 전체 개수
+     */
+    int countCommonTemplates(
             @Param("layoutType") String layoutType,
-            @Param("category") String category
+            @Param("ctgyBig") String ctgyBig,
+            @Param("ctgyMid") String ctgyMid,
+            @Param("ctgySml") String ctgySml,
+            @Param("ctgySub") String ctgySub
     );
 
-    // 최근 사용 템플릿 조회
-    List<PopTemplateVO> selectRecentTemplates(
-            @Param("martId") String martId,
-            @Param("limit") int limit
+    /**
+     * 우리 마트 템플릿 리스트 조회 (is_common = 'N' AND mart_cd = ?)
+     */
+    List<PopTemplateVO> selectMyTemplates(
+            @Param("martCd") String martCd,
+            @Param("layoutType") String layoutType,
+            @Param("ctgyBig") String ctgyBig,
+            @Param("ctgyMid") String ctgyMid,
+            @Param("ctgySml") String ctgySml,
+            @Param("ctgySub") String ctgySub,
+            @Param("offset") int offset,
+            @Param("pageSize") int pageSize
     );
+
+    /**
+     * 우리 마트 템플릿 전체 개수
+     */
+    int countMyTemplates(
+            @Param("martCd") String martCd,
+            @Param("layoutType") String layoutType,
+            @Param("ctgyBig") String ctgyBig,
+            @Param("ctgyMid") String ctgyMid,
+            @Param("ctgySml") String ctgySml,
+            @Param("ctgySub") String ctgySub
+    );
+
 }

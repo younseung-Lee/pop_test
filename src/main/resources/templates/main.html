@@ -90,9 +90,16 @@
             <button class="sidebar-tab" type="button">🔍 상품 이미지검색</button>
         </div>
 
-        <!-- 템플릿 레이아웃 / 카테고리 필터 영역 -->
+        <!-- 템플릿 레이아웃 / 카테고리 / 소스 필터 영역 -->
         <div class="sidebar-search">
             <div class="search-box">
+                <!-- 템플릿 타입: 공통 / 우리 마트 -->
+                <select class="search-select" id="templateSource"
+                        onchange="PopEditor.filterTemplateByLayout()">
+                    <option value="COMMON">공통 템플릿</option>
+                    <option value="MY">우리 마트 템플릿</option>
+                </select>
+
                 <!-- 레이아웃 선택: 전체 / 세로형 / 가로형 / 쇼카드 -->
                 <select class="search-select" id="templateLayout"
                         onchange="PopEditor.filterTemplateByLayout()">
@@ -118,6 +125,13 @@
                 전체 템플릿
                 <strong id="templateTotalCount" style="color:#667eea;" th:text="${templateTotalCount}">0</strong> 개
             </div>
+
+<!--            &lt;!&ndash; 페이징 영역 &ndash;&gt;-->
+<!--            <div class="template-pagination" style="margin-top:8px; display:flex; align-items:center; gap:8px;">-->
+<!--                <button type="button" id="tplPrevPage" class="toolbar-btn">이전</button>-->
+<!--                <span id="tplPageInfo" style="font-size:14px; color:#555;">1 / 1 페이지</span>-->
+<!--                <button type="button" id="tplNextPage" class="toolbar-btn">다음</button>-->
+<!--            </div>-->
         </div>
 
         <!-- 템플릿 리스트: 컨트롤러에서 레이아웃/카테고리 필터 된 templateList 기준 -->
@@ -127,6 +141,8 @@
                     <div>
                         <span class="category-title">
                             📁
+                            <span id="currentSourceLabel">공통 템플릿</span>
+                            ·
                             <span id="currentLayoutLabel">전체 레이아웃</span>
                             /
                             <span id="currentCategoryLabel">전체 카테고리</span>
@@ -138,15 +154,15 @@
                     <!-- 필터로 조회된 템플릿들 -->
                     <div class="template-item"
                          th:each="tpl : ${templateList}"
-                         th:attr="data-template-id=${tpl.templateId},
-                                  data-bg=${tpl.templateImage},
+                         th:attr="data-template-id=${tpl.tplId},
+                                  data-bg=${tpl.bgImgUrl},
                                   data-layout=${tpl.layoutType}">
                         <div class="template-thumb">
-                            <img th:src="${tpl.templateImage}"
+                            <img th:src="${tpl.bgImgUrl}"
                                  alt="템플릿"
                                  style="width:100%;height:100%;object-fit:cover;border-radius:4px;"/>
                         </div>
-                        <div class="template-name" th:text="${tpl.templateName}">샘플 템플릿</div>
+                        <div class="template-name" th:text="${tpl.tplNm}">샘플 템플릿</div>
                         <div class="template-size"></div>
                     </div>
 
@@ -156,6 +172,12 @@
                         <div class="template-name">조건에 해당하는 템플릿이 없습니다.</div>
                         <div class="template-size"></div>
                     </div>
+                </div>
+                <!-- 페이징 영역 -->
+                <div class="template-pagination" style="margin-top:8px; display:flex; align-items:center; gap:8px;">
+                    <button type="button" id="tplPrevPage" class="toolbar-btn">이전</button>
+                    <span id="tplPageInfo" style="font-size:14px; color:#555;">1 / 1 페이지</span>
+                    <button type="button" id="tplNextPage" class="toolbar-btn">다음</button>
                 </div>
             </div>
         </div>
