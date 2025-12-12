@@ -13,18 +13,96 @@ public class TemplateServiceImpl implements TemplateService {
 
     private final PopTemplateMapper popTemplateMapper;
 
-    @Override
-    public List<PopTemplateVO> getTemplates(String layoutType, String category) {
-        return popTemplateMapper.selectTemplates(layoutType, category);
+    private int calcOffset(int page, int size) {
+        int safePage = (page <= 0) ? 1 : page;
+        int safeSize = (size <= 0) ? 20 : size;
+        return (safePage - 1) * safeSize;
+    }
+
+    private int calcPageSize(int size) {
+        return (size <= 0) ? 20 : size;
     }
 
     @Override
-    public int getTemplateCount(String layoutType, String category) {
-        return popTemplateMapper.countTemplates(layoutType, category);
+    public List<PopTemplateVO> getCommonTemplates(String layoutType,
+                                                  String ctgyBig,
+                                                  String ctgyMid,
+                                                  String ctgySml,
+                                                  String ctgySub,
+                                                  int page,
+                                                  int size) {
+
+        int offset = calcOffset(page, size);
+        int pageSize = calcPageSize(size);
+
+        return popTemplateMapper.selectCommonTemplates(
+                layoutType,
+                ctgyBig,
+                ctgyMid,
+                ctgySml,
+                ctgySub,
+                offset,
+                pageSize
+        );
     }
 
     @Override
-    public List<PopTemplateVO> getRecentTemplates(String martId, int limit) {
-        return popTemplateMapper.selectRecentTemplates(martId, limit);
+    public int getCommonTemplateCount(String layoutType,
+                                      String ctgyBig,
+                                      String ctgyMid,
+                                      String ctgySml,
+                                      String ctgySub) {
+
+        return popTemplateMapper.countCommonTemplates(
+                layoutType,
+                ctgyBig,
+                ctgyMid,
+                ctgySml,
+                ctgySub
+        );
+    }
+
+    @Override
+    public List<PopTemplateVO> getMyTemplates(String martCd,
+                                              String layoutType,
+                                              String ctgyBig,
+                                              String ctgyMid,
+                                              String ctgySml,
+                                              String ctgySub,
+                                              int page,
+                                              int size) {
+
+        int offset = calcOffset(page, size);
+        int pageSize = calcPageSize(size);
+
+        return popTemplateMapper.selectMyTemplates(
+                martCd,
+                layoutType,
+                ctgyBig,
+                ctgyMid,
+                ctgySml,
+                ctgySub,
+                offset,
+                pageSize
+        );
+    }
+
+    @Override
+    public int getMyTemplateCount(String martCd,
+                                  String layoutType,
+                                  String ctgyBig,
+                                  String ctgyMid,
+                                  String ctgySml,
+                                  String ctgySub) {
+
+        return popTemplateMapper.countMyTemplates(
+                martCd,
+                layoutType,
+                ctgyBig,
+                ctgyMid,
+                ctgySml,
+                ctgySub
+        );
     }
 }
+

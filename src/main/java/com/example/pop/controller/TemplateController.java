@@ -23,17 +23,31 @@ public class TemplateController {
 
     private final TemplateService templateService;
 
-    @GetMapping("/templates")
-    public Map<String, Object> getTemplates(
+    /**
+     * 공통 템플릿 조회 (is_common = 'Y')
+     * ex) GET /api/templates/common?layoutType=VERTICAL&ctgyBig=EVT&page=1&size=20
+     */
+    @GetMapping("/templates/common")
+    public Map<String, Object> getCommonTemplates(
             @RequestParam(required = false) String layoutType,
-            @RequestParam(required = false) String category
+            @RequestParam(required = false, name = "ctgyBig") String ctgyBig,
+            @RequestParam(required = false, name = "ctgyMid") String ctgyMid,
+            @RequestParam(required = false, name = "ctgySml") String ctgySml,
+            @RequestParam(required = false, name = "ctgySub") String ctgySub,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size
     ) {
-        log.info("템플릿 조회 요청 - layoutType: {}, category: {}", layoutType, category);
+        log.info("공통 템플릿 조회 요청 - layoutType: {}, ctgyBig: {}, ctgyMid: {}, ctgySml: {}, ctgySub: {}, page: {}, size: {}",
+                layoutType, ctgyBig, ctgyMid, ctgySml, ctgySub, page, size);
 
-        List<PopTemplateVO> list = templateService.getTemplates(layoutType, category);
-        int totalCount = templateService.getTemplateCount(layoutType, category);
+        List<PopTemplateVO> list = templateService.getCommonTemplates(
+                layoutType, ctgyBig, ctgyMid, ctgySml, ctgySub, page, size);
+        int totalCount = templateService.getCommonTemplateCount(
+                layoutType, ctgyBig, ctgyMid, ctgySml, ctgySub);
 
         Map<String, Object> result = new HashMap<>();
+        result.put("page", page);
+        result.put("size", size);
         result.put("totalCount", totalCount);
         result.put("templates", list);
 
@@ -41,28 +55,41 @@ public class TemplateController {
     }
 
     /**
-     * 최근 사용 템플릿 조회
-     * - 로그인한 마트 기준
-     * - /api/templates/recent?limit=6
+     * 우리 마트 템플릿 조회 (is_common = 'N' AND mart_cd = 세션 mart)
      */
-    @GetMapping("/templates/recent")
-    public Map<String, Object> getRecentTemplates(
-            @RequestParam(defaultValue = "6") int limit,
-            HttpSession session
+    @GetMapping("/templates/my")
+    public Map<String, Object> getMyTemplates(
+            HttpSession session,
+            @RequestParam(required = false) String layoutType,
+            @RequestParam(required = false, name = "ctgyBig") String ctgyBig,
+            @RequestParam(required = false, name = "ctgyMid") String ctgyMid,
+            @RequestParam(required = false, name = "ctgySml") String ctgySml,
+            @RequestParam(required = false, name = "ctgySub") String ctgySub,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size
     ) {
-        // 세션 키 이름은 실제 프로젝트에 맞게 변경 (예: "user", "loginUser" 등)
-        MartIpVO user = (MartIpVO) session.getAttribute("loginUser");
+
+        MartIpVO user = (MartIpVO) session.getAttribute("user");
         if (user == null) {
             throw new RuntimeException("로그인 정보가 없습니다.");
         }
 
-        String martId = user.getId();
-        log.info("최근 템플릿 조회 요청 - martId: {}, limit: {}", martId, limit);
+        // MartIpVO 에서 마트 코드(ID) 추출
+        String martCd = user.getId();
 
-        List<PopTemplateVO> list = templateService.getRecentTemplates(martId, limit);
+        log.info("우리 템플릿 조회 요청 - martCd: {}, layoutType: {}, ctgyBig: {}, ctgyMid: {}, ctgySml: {}, ctgySub: {}, page: {}, size: {}",
+                martCd, layoutType, ctgyBig, ctgyMid, ctgySml, ctgySub, page, size);
+
+        List<PopTemplateVO> list = templateService.getMyTemplates(
+                martCd, layoutType, ctgyBig, ctgyMid, ctgySml, ctgySub, page, size);
+        int totalCount = templateService.getMyTemplateCount(
+                martCd, layoutType, ctgyBig, ctgyMid, ctgySml, ctgySub);
 
         Map<String, Object> result = new HashMap<>();
-        result.put("martId", martId);
+        result.put("martCd", martCd);
+        result.put("page", page);
+        result.put("size", size);
+        result.put("totalCount", totalCount);
         result.put("templates", list);
 
         return result;
