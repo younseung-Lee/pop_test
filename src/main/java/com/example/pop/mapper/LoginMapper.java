@@ -13,7 +13,7 @@ public interface LoginMapper {
      * 아이디와 비밀번호로 사용자 조회
      *  - 없으면 null
      */
-    Map<String, Object> findByIdAndPw(Map<String, Object> params);
+    MartIpVO findByIdAndPw(Map<String, Object> params);
 
     /**
      * 아이디로 마트 IP 조회 (필요 시 사용)
