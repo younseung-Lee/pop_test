@@ -3,33 +3,22 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.example.pop.mapper.LoginMapper">
-    
-    <!-- 아이디와 비밀번호로 사용자 조회 -->
-    <select id="findByIdAndPw" parameterType="map" resultType="map">
-        SELECT user_seq,
-               mart_cd,
-               mart_nm,
-               unit_mart,
-               als_mart_nm,
-               user_id,
-               user_nm,
-               user_pwd,
-               used_yn,
-               user_auth,
-               reg_dt,
-               mody_dt,
-               mart_prefix_group,
-               push_token,
-               device_uuid,
-               order_letter,
-               order_sort,
-               user_password,
-               als_mart_nm2
+
+    <!-- 로그인: users 테이블 → MartIpVO 매핑 -->
+    <select id="findByIdAndPw"
+            parameterType="map"
+            resultType="com.example.pop.vo.MartIpVO">
+        SELECT
+            mart_cd    AS id,
+            user_nm    AS nm,
+            user_id    AS sep_pwd,
+            user_auth  AS gr
         FROM am_mart.users
         WHERE user_id = #{id}
-          AND (user_pwd = #{pw})
+
+          AND user_pwd = #{pw}
           AND used_yn = 'Y'
-        LIMIT 1
+            LIMIT 1
     </select>
     
 

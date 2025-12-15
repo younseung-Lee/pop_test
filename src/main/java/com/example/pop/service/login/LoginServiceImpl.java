@@ -1,6 +1,7 @@
 package com.example.pop.service.login;
 
 import com.example.pop.mapper.LoginMapper;
+import com.example.pop.vo.MartIpVO;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,37 +9,35 @@ import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
-@Service
 @Slf4j
+@Service
 @RequiredArgsConstructor
 public class LoginServiceImpl implements LoginService {
 
     private final LoginMapper loginMapper;
 
     @Override
-    public Map<String, Object> login(Map<String, Object> params, HttpSession session) {
+    public MartIpVO login(Map<String, Object> params, HttpSession session) {
+
         String id = (String) params.get("id");
         String pw = (String) params.get("pw");
 
         if (id == null || pw == null) {
-            log.warn("로그인 파라미터 누락 - id: {}, pw: {}", id, pw);
+            log.warn("로그인 파라미터 누락");
             return null;
         }
 
-        // Mapper에서 단일 사용자 Map 조회
-        Map<String, Object> user = loginMapper.findByIdAndPw(params);
+        MartIpVO user = loginMapper.findByIdAndPw(params);
 
         if (user == null) {
-            log.warn("로그인 실패 - 아이디/비밀번호 불일치, id={}", id);
+            log.warn("로그인 실패 - id={}", id);
             return null;
         }
 
-        // 로그인 성공 → 세션에 저장
-        session.setAttribute("loginUser", user);
-        session.setAttribute("userId", user.get("user_id"));
-        session.setAttribute("martCd", user.get("mart_cd"));
+        // ✅ 세션에는 무조건 "user" 키로 MartIpVO 저장
+        session.setAttribute("user", user);
 
-        log.info("로그인 성공 - id={}", id);
+        log.info("로그인 성공 - martCd={}, userNm={}", user.getId(), user.getNm());
         return user;
     }
 
@@ -46,19 +45,13 @@ public class LoginServiceImpl implements LoginService {
     public void logout(HttpSession session) {
         if (session != null) {
             session.invalidate();
-            log.info("로그아웃 처리 완료");
         }
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public Map<String, Object> getLoginUser(HttpSession session) {
-        if (session == null) return null;
-        Object obj = session.getAttribute("loginUser");
-        if (obj instanceof Map) {
-            return (Map<String, Object>) obj;
-        }
-        return null;
+    public MartIpVO getLoginUser(HttpSession session) {
+        Object obj = session.getAttribute("user");
+        return (obj instanceof MartIpVO) ? (MartIpVO) obj : null;
     }
 
     @Override

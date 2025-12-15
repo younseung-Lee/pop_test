@@ -6,10 +6,7 @@ import com.example.pop.vo.PopTemplateVO;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +19,13 @@ import java.util.Map;
 public class TemplateController {
 
     private final TemplateService templateService;
+
+
+    /**
+     * 공통 템플릿 등록 (관리자만:a4계정)
+     * POST /api/templates/common
+     */
+    @PostMapping("/template")
 
     /**
      * 공통 템플릿 조회 (is_common = 'Y')
