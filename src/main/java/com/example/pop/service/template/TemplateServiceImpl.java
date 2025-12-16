@@ -104,5 +104,13 @@ public class TemplateServiceImpl implements TemplateService {
                 ctgySub
         );
     }
+
+    @Override
+    public int createTemplate(PopTemplateVO vo) {
+        if (vo.getTplNm() == null || vo.getTplNm().isBlank()) throw new RuntimeException("템플릿 이름 필수");
+        if (vo.getLayoutType() == null || vo.getLayoutType().isBlank()) throw new RuntimeException("layoutType 필수");
+
+        return popTemplateMapper.insertTemplate(vo);
+    }
 }
 

@@ -9,9 +9,9 @@
             parameterType="map"
             resultType="com.example.pop.vo.MartIpVO">
         SELECT
-            mart_cd    AS id,
+            mart_cd    AS sep_pwd,
             user_nm    AS nm,
-            user_id    AS sep_pwd,
+            user_id    AS id,
             user_auth  AS gr
         FROM am_mart.users
         WHERE user_id = #{id}
