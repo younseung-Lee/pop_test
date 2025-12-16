@@ -162,7 +162,7 @@
         </where>
     </select>
 
-    <!-- ✅ 템플릿 등록 -->
+    <!--  템플릿 등록 -->
     <insert id="insertTemplate"
             parameterType="com.example.pop.vo.PopTemplateVO"
             useGeneratedKeys="true"
@@ -188,7 +188,7 @@
         ) VALUES (
                      #{tplCommon},
                      #{martCd},
-                     #{tplId},
+                     UUID_SHORT(),
                      #{tplNm},
                      #{tplCtgyBig},
                      #{tplCtgyMid},

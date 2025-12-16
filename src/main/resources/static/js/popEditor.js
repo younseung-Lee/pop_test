@@ -10,6 +10,7 @@ const PopEditor = (() => {
     const TEMPLATE_PAGE_SIZE = 12;     // 한 페이지당 템플릿 개수
     let lastLayoutFilter = '';
     let lastCategoryFilter = '';
+    let selectedCommonTemplate = null;
 
     // 레이아웃별 고정 캔버스 사이즈
     const LAYOUT_SIZE_MAP = {
@@ -54,22 +55,32 @@ const PopEditor = (() => {
                 syncPreview();
             });
         });
+
         bindCanvasPanZoom();
     }
-
-    // ... (중략: 캔버스 관련 함수들은 그대로 유지) ...
 
     // ===== 템플릿 로드 =====
     async function loadTemplate(el) {
         if (!editCanvas || !el) return;
 
-        const bgUrl = el.getAttribute('data-bg');
-        const layoutType = el.getAttribute('data-layout') || 'VERTICAL';
+        // ✅ 선택된 템플릿 메타 저장 (공통/우리매장 상관없이 "현재 기반 템플릿"으로 쓰되,
+        //    우리매장 저장은 "공통 기반"이므로 COMMON일 때만 강제 체크할 거야.
+        selectedCommonTemplate = {
+            tplId: el.getAttribute('data-template-id'),
+            bgImgUrl: el.getAttribute('data-bg'),
+            layoutType: el.getAttribute('data-layout') || 'VERTICAL',
+            ctgyBig: el.getAttribute('data-ctgy-big') || '',
+            ctgyMid: el.getAttribute('data-ctgy-mid') || '',
+            ctgySml: el.getAttribute('data-ctgy-sml') || '',
+            ctgySub: el.getAttribute('data-ctgy-sub') || ''
+        };
+
+        const bgUrl = selectedCommonTemplate.bgImgUrl;
+        const layoutType = selectedCommonTemplate.layoutType;
         const { width: w, height: h } = getCanvasSizeForLayout(layoutType);
 
         editCanvas.clear();
         editCanvas.setDimensions({ width: w, height: h });
-
         editCanvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
 
         if (!bgUrl) {
@@ -132,18 +143,14 @@ const PopEditor = (() => {
             : '/api/templates/common';
 
         const params = [];
-
         if (layoutType) params.push('layoutType=' + encodeURIComponent(layoutType));
-        // 카테고리는 백엔드의 tpl_ctgy_big 에 매핑 → ctgyBig 파라미터 사용
-        if (category) params.push('ctgyBig=' + encodeURIComponent(category));
+        if (category)  params.push('ctgyBig=' + encodeURIComponent(category));
 
         // 페이징 파라미터
         params.push('page=' + encodeURIComponent(templatePage));
         params.push('size=' + encodeURIComponent(TEMPLATE_PAGE_SIZE));
 
-        if (params.length > 0) {
-            url += '?' + params.join('&');
-        }
+        if (params.length > 0) url += '?' + params.join('&');
 
         fetch(url)
             .then(res => res.json())
@@ -160,9 +167,7 @@ const PopEditor = (() => {
 
                 // 총 개수 표시 갱신
                 const totalEl = document.getElementById('templateTotalCount');
-                if (totalEl) {
-                    totalEl.textContent = totalCount;
-                }
+                if (totalEl) totalEl.textContent = totalCount;
 
                 // 현재 선택된 레이아웃/카테고리 라벨 갱신
                 updateFilterLabels(layoutType, category, source);
@@ -185,9 +190,17 @@ const PopEditor = (() => {
                 templates.forEach(tpl => {
                     const item = document.createElement('div');
                     item.className = 'template-item';
+
+                    // ✅ 데이터셋에 카테고리/레이아웃도 같이 심어둠 (우리매장 저장 시 상속)
                     item.setAttribute('data-template-id', tpl.tplId);
                     item.setAttribute('data-bg', tpl.bgImgUrl);
                     item.setAttribute('data-layout', tpl.layoutType);
+
+                    // ⚠️ VO 필드명이 tplCtgyBig 형태라서 아래처럼 사용
+                    item.setAttribute('data-ctgy-big', tpl.tplCtgyBig || '');
+                    item.setAttribute('data-ctgy-mid', tpl.tplCtgyMid || '');
+                    item.setAttribute('data-ctgy-sml', tpl.tplCtgySml || '');
+                    item.setAttribute('data-ctgy-sub', tpl.tplCtgySub || '');
 
                     const thumb = document.createElement('div');
                     thumb.className = 'template-thumb';
@@ -206,7 +219,6 @@ const PopEditor = (() => {
 
                     const size = document.createElement('div');
                     size.className = 'template-size';
-                    // 필요하면 레이아웃/카테고리 등 표시 가능
                     size.textContent = '';
 
                     item.appendChild(thumb);
@@ -267,24 +279,75 @@ const PopEditor = (() => {
 
         const totalPages = Math.max(1, Math.ceil(totalCount / TEMPLATE_PAGE_SIZE));
 
-        if (pageInfoEl) {
-            pageInfoEl.textContent = `${templatePage} / ${totalPages} 페이지`;
+        if (pageInfoEl) pageInfoEl.textContent = `${templatePage} / ${totalPages} 페이지`;
+        if (prevBtn) prevBtn.disabled = (templatePage <= 1);
+        if (nextBtn) nextBtn.disabled = (templatePage >= totalPages);
+    }
+
+    // ===== ✅ 우리매장 저장 (공통 템플릿 기반 복제 + 편집 JSON 저장) =====
+    async function saveWork() {
+        if (!editCanvas) return;
+
+        // ✅ 우리매장 템플릿은 "공통 템플릿 기반"이어야 함
+        if (templateSource !== 'COMMON') {
+            alert('우리 매장 템플릿은 공통 템플릿을 선택한 후 편집하여 저장해야 합니다.\n좌측 상단에서 "공통 템플릿"으로 전환 후 선택해주세요.');
+            return;
         }
-        if (prevBtn) {
-            prevBtn.disabled = (templatePage <= 1);
+        if (!selectedCommonTemplate || !selectedCommonTemplate.tplId) {
+            alert('먼저 공통 템플릿을 선택한 뒤 편집 후 저장해 주세요.');
+            return;
         }
-        if (nextBtn) {
-            nextBtn.disabled = (templatePage >= totalPages);
+
+        const tplNm = prompt('저장할 우리 매장 템플릿 이름을 입력하세요.');
+        if (!tplNm || !tplNm.trim()) return;
+
+        const payload = {
+            // 사용자 입력 이름
+            tplNm: tplNm.trim(),
+
+            // ✅ 공통 템플릿에서 상속
+            layoutType: selectedCommonTemplate.layoutType,
+            bgImgUrl: selectedCommonTemplate.bgImgUrl,
+            tplCtgyBig: selectedCommonTemplate.ctgyBig,
+            tplCtgyMid: selectedCommonTemplate.ctgyMid,
+            tplCtgySml: selectedCommonTemplate.ctgySml,
+            tplCtgySub: selectedCommonTemplate.ctgySub,
+
+            // ✅ 편집 결과 JSON
+            tplJson: JSON.stringify(editCanvas.toJSON()),
+
+            useYn: 'Y'
+        };
+
+        try {
+            const res = await fetch('/api/templates/my', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok || !data.success) {
+                alert('저장 실패: ' + (data.message || '서버 오류'));
+                return;
+            }
+
+            alert('우리 매장 템플릿 저장 완료!');
+
+            // 저장 후 "우리 마트 템플릿"으로 전환해 보여주고 싶으면:
+            // const sourceSel = document.getElementById('templateSource');
+            // if (sourceSel) sourceSel.value = 'MY';
+            // templateSource = 'MY';
+            // templatePage = 1;
+            // filterTemplateByLayout();
+
+        } catch (e) {
+            console.error(e);
+            alert('저장 중 오류가 발생했습니다.');
         }
     }
 
-    // ===== 저장 더미 =====
-    function saveWork() {
-        if (!editCanvas) return;
-        const json = editCanvas.toJSON();
-        console.log('저장용 JSON:', json);
-        alert('저장 로직은 백엔드 구현 후 연결할 예정입니다.\n(콘솔에서 JSON 확인 가능)');
-    }
 
     // ===== DOM 이벤트 바인딩 =====
     document.addEventListener('DOMContentLoaded', () => {
@@ -334,8 +397,6 @@ const PopEditor = (() => {
             });
         }
     });
-
-    // ... (색상 피커/폰트 동기화 함수들은 그대로 유지) ...
 
     return {
         newWork,
