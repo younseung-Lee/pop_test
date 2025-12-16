@@ -34,7 +34,7 @@ public class LoginServiceImpl implements LoginService {
             return null;
         }
 
-        // ✅ 세션에는 무조건 "user" 키로 MartIpVO 저장
+        // 세션에는 무조건 "user" 키로 MartIpVO 저장
         session.setAttribute("user", user);
 
         log.info("로그인 성공 - martCd={}, userNm={}", user.getId(), user.getNm());

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>공통 템플릿 등록</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+    <style>
+        .wrap { max-width: 920px; margin: 24px auto; padding: 16px; }
+        .row { display:flex; gap:12px; margin-bottom:12px; align-items:center; }
+        .row label { width: 140px; font-weight: 600; }
+        .row input, .row select, .row textarea { flex:1; padding:10px; border:1px solid #ddd; border-radius:8px; }
+        .btns { display:flex; gap:10px; margin-top:16px; }
+        .btn { padding:10px 14px; border-radius:10px; border:1px solid #ddd; cursor:pointer; background:#fff; }
+        .btn.primary { border:none; background:#667eea; color:#fff; }
+        .hint { color:#666; font-size:13px; margin: 6px 0 18px; }
+        .json { height: 180px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    </style>
+</head>
+<body>
+
+<div class="wrap">
+    <h2>공통 템플릿 등록 (a4 관리자)</h2>
+    <p class="hint">저장 시 서버에서 자동으로 <b>is_common=Y</b>로 저장됩니다.</p>
+
+    <div class="row">
+        <label>템플릿명(tplNm)</label>
+        <input id="tplNm" type="text" placeholder="예) 겨울 세일 POP 01">
+    </div>
+
+    <div class="row">
+        <label>레이아웃(layoutType)</label>
+        <select id="layoutType">
+            <option value="VERTICAL">VERTICAL (세로)</option>
+            <option value="HORIZONTAL">HORIZONTAL (가로)</option>
+            <option value="SHOWCARD">SHOWCARD (쇼카드)</option>
+        </select>
+    </div>
+
+    <div class="row">
+        <label>카테고리 대</label>
+        <input id="ctgyBig" type="text" placeholder="예) EVT">
+    </div>
+    <div class="row">
+        <label>카테고리 중</label>
+        <input id="ctgyMid" type="text" placeholder="">
+    </div>
+    <div class="row">
+        <label>카테고리 소</label>
+        <input id="ctgySml" type="text" placeholder="">
+    </div>
+    <div class="row">
+        <label>카테고리 서브</label>
+        <input id="ctgySub" type="text" placeholder="">
+    </div>
+
+    <div class="row">
+        <label>배경이미지 URL</label>
+        <input id="bgImgUrl" type="text" placeholder="https://...">
+    </div>
+
+    <div class="row">
+        <label>tplJson</label>
+        <textarea id="tplJson" class="json" placeholder='{"objects":[...],"background":"#fff"}'></textarea>
+    </div>
+
+    <div class="btns">
+        <button class="btn" type="button" onclick="location.href='/main'">취소</button>
+        <button class="btn primary" type="button" onclick="saveCommonTemplate()">저장</button>
+    </div>
+</div>
+
+<script>
+    async function saveCommonTemplate() {
+        const body = {
+            tplNm: document.getElementById('tplNm').value.trim(),
+            layoutType: document.getElementById('layoutType').value,
+            tplCtgyBig: document.getElementById('ctgyBig').value.trim(),
+            tplCtgyMid: document.getElementById('ctgyMid').value.trim(),
+            tplCtgySml: document.getElementById('ctgySml').value.trim(),
+            tplCtgySub: document.getElementById('ctgySub').value.trim(),
+            bgImgUrl: document.getElementById('bgImgUrl').value.trim(),
+            tplJson: document.getElementById('tplJson').value.trim()
+        };
+
+        if (!body.tplNm) return alert('템플릿명(tplNm)은 필수입니다.');
+        if (!body.layoutType) return alert('layoutType은 필수입니다.');
+        if (!body.bgImgUrl) return alert('배경이미지 URL(bgImgUrl)은 필수입니다.');
+        if (!body.tplJson) return alert('tplJson은 필수입니다.');
+
+        try {
+            const res = await fetch('/api/templates/common', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (res.status === 401) {
+                alert('로그인이 필요합니다.');
+                location.href = '/login';
+                return;
+            }
+            if (res.status === 403) {
+                alert('권한이 없습니다. (a4 관리자만)');
+                location.href = '/main';
+                return;
+            }
+            if (!res.ok || !data.success) {
+                alert('저장 실패: ' + (data.message || '서버 오류'));
+                return;
+            }
+
+            alert('저장 완료! tplSeq=' + data.tplSeq);
+            location.href = '/main';
+
+        } catch (e) {
+            console.error(e);
+            alert('저장 중 오류가 발생했습니다.');
+        }
+    }
+</script>
+
+</body>
+</html>

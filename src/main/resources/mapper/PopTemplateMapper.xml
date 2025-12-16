@@ -162,4 +162,48 @@
         </where>
     </select>
 
+    <!-- ✅ 템플릿 등록 -->
+    <insert id="insertTemplate"
+            parameterType="com.example.pop.vo.PopTemplateVO"
+            useGeneratedKeys="true"
+            keyProperty="tplSeq">
+        INSERT INTO pop_tpl (
+            tpl_common,
+            mart_cd,
+            tpl_id,
+            tpl_nm,
+            tpl_ctgy_big,
+            tpl_ctgy_mid,
+            tpl_ctgy_sml,
+            tpl_ctgy_sub,
+            layout_type,
+            bg_img_url,
+            tpl_json,
+            is_common,
+            use_yn,
+            reg_id,
+            reg_dt,
+            mod_id,
+            mod_dt
+        ) VALUES (
+                     #{tplCommon},
+                     #{martCd},
+                     #{tplId},
+                     #{tplNm},
+                     #{tplCtgyBig},
+                     #{tplCtgyMid},
+                     #{tplCtgySml},
+                     #{tplCtgySub},
+                     #{layoutType},
+                     #{bgImgUrl},
+                     #{tplJson},
+                     #{isCommon},
+                     #{useYn},
+                     #{regId},
+                     NOW(),
+                     #{modId},
+                     NOW()
+                 )
+    </insert>
+
 </mapper>

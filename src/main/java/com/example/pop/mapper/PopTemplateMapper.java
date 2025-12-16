@@ -59,4 +59,5 @@ public interface PopTemplateMapper {
             @Param("ctgySub") String ctgySub
     );
 
+    int insertTemplate(PopTemplateVO vo);
 }

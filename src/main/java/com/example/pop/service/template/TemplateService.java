@@ -57,4 +57,5 @@ public interface TemplateService {
             String ctgySub
     );
 
+    int createTemplate(PopTemplateVO vo);
 }
