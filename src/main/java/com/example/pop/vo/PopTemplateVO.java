@@ -9,10 +9,11 @@ public class PopTemplateVO {
     private Long tplSeq;
     private String tplCommon;
     private String martCd;
+    private String tplId;
     private String tplNm;
     private String tplCtgyBig;
     private String tplCtgyMid;
-    private String tplCtgySmall;
+    private String tplCtgySml;
     private String tplCtgySub;
     private String layoutType;
     private String bgImgUrl;

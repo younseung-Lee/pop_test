@@ -4,6 +4,7 @@ import com.example.pop.mapper.PopTemplateMapper;
 import com.example.pop.vo.PopTemplateVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -105,10 +106,15 @@ public class TemplateServiceImpl implements TemplateService {
         );
     }
 
+
     @Override
+    @Transactional
     public int createTemplate(PopTemplateVO vo) {
         if (vo.getTplNm() == null || vo.getTplNm().isBlank()) throw new RuntimeException("템플릿 이름 필수");
         if (vo.getLayoutType() == null || vo.getLayoutType().isBlank()) throw new RuntimeException("layoutType 필수");
+
+        // tpl_common dummy 기본값 보정
+        if (vo.getTplCommon() == null || vo.getTplCommon().isBlank()) vo.setTplCommon("001");
 
         return popTemplateMapper.insertTemplate(vo);
     }

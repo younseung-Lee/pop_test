@@ -161,9 +161,15 @@
                     <!-- 필터로 조회된 템플릿들 -->
                     <div class="template-item"
                          th:each="tpl : ${templateList}"
-                         th:attr="data-template-id=${tpl.tplId},
-                                  data-bg=${tpl.bgImgUrl},
-                                  data-layout=${tpl.layoutType}">
+                         th:attr="
+                           data-template-id=${tpl.tplId},
+                           data-bg=${tpl.bgImgUrl},
+                           data-layout=${tpl.layoutType},
+                           data-ctgy-big=${tpl.tplCtgyBig},
+                           data-ctgy-mid=${tpl.tplCtgyMid},
+                           data-ctgy-sml=${tpl.tplCtgySml},
+                           data-ctgy-sub=${tpl.tplCtgySub}
+                         ">
                         <div class="template-thumb">
                             <img th:src="${tpl.bgImgUrl}"
                                  alt="템플릿"
