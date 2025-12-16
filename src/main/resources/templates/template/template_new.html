@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>공통 템플릿 등록</title>
+
+    <!-- 공통 css -->
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+
+    <!-- 템플릿 등록 전용 css -->
+    <link rel="stylesheet" th:href="@{/css/template_new.css}">
+</head>
+<body>
+<div class="wrap">
+    <h2>공통 템플릿 등록 (a4 관리자)</h2>
+    <p class="hint">※ 파일 업로드만 지원합니다.</p>
+
+    <div class="row">
+        <label>템플릿명</label>
+        <input id="templateName" type="text" placeholder="예) 겨울 행사 POP" />
+    </div>
+
+    <div class="row">
+        <label>레이아웃</label>
+        <select id="layoutType">
+            <option value="VERTICAL">VERTICAL</option>
+            <option value="HORIZONTAL">HORIZONTAL</option>
+            <option value="SHOWCARD">SHOWCARD</option>
+        </select>
+    </div>
+
+    <div class="row">
+        <label>카테고리(대)</label>
+        <input id="ctgyBig" type="text" placeholder="EVT" />
+    </div>
+    <div class="row">
+        <label>카테고리(중)</label>
+        <input id="ctgyMid" type="text" />
+    </div>
+    <div class="row">
+        <label>카테고리(소)</label>
+        <input id="ctgySml" type="text" />
+    </div>
+    <div class="row">
+        <label>카테고리(서브)</label>
+        <input id="ctgySub" type="text" />
+    </div>
+
+    <div class="row">
+        <label>템플릿 JSON</label>
+        <textarea id="tplJson" class="json" placeholder='{"objects":[...]} (선택)'></textarea>
+    </div>
+
+    <div class="row">
+        <label>템플릿 이미지</label>
+        <input id="templateImages" type="file" accept="image/*" multiple onchange="handleFileSelect(event)" />
+    </div>
+
+    <!-- 미리보기 섹션 -->
+    <div id="previewSection" class="preview-section">
+        <div class="preview-header">
+            <div>
+                <span class="preview-title">미리보기</span>
+                <span class="preview-count" id="previewCount">0개 선택됨</span>
+            </div>
+            <div class="preview-actions">
+                <button class="btn" type="button" onclick="selectAll()">전체 선택</button>
+                <button class="btn" type="button" onclick="deselectAll()">선택 해제</button>
+                <button class="btn danger" type="button" onclick="deleteSelected()">선택 삭제</button>
+                <button class="btn danger" type="button" onclick="deleteAll()">전체 삭제</button>
+            </div>
+        </div>
+        <div id="previewGrid" class="preview-grid"></div>
+    </div>
+
+    <div class="btns">
+        <button class="btn" type="button" onclick="location.href='/main'">취소</button>
+        <button class="btn primary" type="button" onclick="submitCommon()">등록</button>
+    </div>
+</div>
+
+<script>
+    // 전역 변수로 파일 배열 관리
+    let selectedFiles = [];
+
+    function handleFileSelect(event) {
+        const files = Array.from(event.target.files);
+        if (files.length === 0) return;
+
+        selectedFiles = [...selectedFiles, ...files];
+        renderPreview();
+        event.target.value = '';
+    }
+
+    function renderPreview() {
+        const previewSection = document.getElementById('previewSection');
+        const previewGrid = document.getElementById('previewGrid');
+        const previewCount = document.getElementById('previewCount');
+
+        if (selectedFiles.length === 0) {
+            previewSection.classList.remove('active');
+            return;
+        }
+
+        previewSection.classList.add('active');
+        previewCount.textContent = `${selectedFiles.length}개 선택됨`;
+        previewGrid.innerHTML = '';
+
+        selectedFiles.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewItem = document.createElement('div');
+                previewItem.className = 'preview-item';
+                previewItem.dataset.index = index;
+
+                previewItem.innerHTML = `
+                    <input type="checkbox" class="preview-checkbox" onchange="toggleSelection(${index})">
+                    <div class="preview-number">${index + 1}</div>
+                    <img src="${e.target.result}" class="preview-image" alt="${file.name}">
+                    <div class="preview-info">
+                        <div class="preview-filename" title="${file.name}">${file.name}</div>
+                    </div>
+                `;
+                previewGrid.appendChild(previewItem);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function toggleSelection(index) {
+        const item = document.querySelector(`[data-index="${index}"]`);
+        const checkbox = item.querySelector('.preview-checkbox');
+        if (checkbox.checked) item.classList.add('selected');
+        else item.classList.remove('selected');
+    }
+
+    function selectAll() {
+        document.querySelectorAll('.preview-checkbox').forEach(cb => cb.checked = true);
+        document.querySelectorAll('.preview-item').forEach(item => item.classList.add('selected'));
+    }
+
+    function deselectAll() {
+        document.querySelectorAll('.preview-checkbox').forEach(cb => cb.checked = false);
+        document.querySelectorAll('.preview-item').forEach(item => item.classList.remove('selected'));
+    }
+
+    function deleteSelected() {
+        const selectedIndices = [];
+        document.querySelectorAll('.preview-checkbox').forEach((cb) => {
+            if (cb.checked) selectedIndices.push(parseInt(cb.closest('.preview-item').dataset.index));
+        });
+
+        if (selectedIndices.length === 0) return alert('삭제할 항목을 선택해주세요.');
+        if (!confirm(`선택한 ${selectedIndices.length}개의 항목을 삭제하시겠습니까?`)) return;
+
+        selectedIndices.sort((a, b) => b - a).forEach(index => selectedFiles.splice(index, 1));
+        renderPreview();
+    }
+
+    function deleteAll() {
+        if (selectedFiles.length === 0) return alert('삭제할 항목이 없습니다.');
+        if (!confirm(`모든 파일(${selectedFiles.length}개)을 삭제하시겠습니까?`)) return;
+
+        selectedFiles = [];
+        renderPreview();
+    }
+
+    async function submitCommon() {
+        const templateName = document.getElementById('templateName').value.trim();
+        const layoutType = document.getElementById('layoutType').value;
+        const ctgyBig = document.getElementById('ctgyBig').value.trim();
+        const ctgyMid = document.getElementById('ctgyMid').value.trim();
+        const ctgySml = document.getElementById('ctgySml').value.trim();
+        const ctgySub = document.getElementById('ctgySub').value.trim();
+        const tplJson = document.getElementById('tplJson').value.trim();
+
+        if (!templateName) return alert('템플릿명을 입력하세요.');
+        if (!layoutType) return alert('레이아웃을 선택하세요.');
+        if (selectedFiles.length === 0) return alert('템플릿 이미지 파일을 선택하세요.');
+
+        const fd = new FormData();
+        fd.append('templateName', templateName);
+        fd.append('layoutType', layoutType);
+        fd.append('ctgyBig', ctgyBig);
+        fd.append('ctgyMid', ctgyMid);
+        fd.append('ctgySml', ctgySml);
+        fd.append('ctgySub', ctgySub);
+        fd.append('tplJson', tplJson);
+
+        selectedFiles.forEach(file => fd.append('templateImages', file));
+
+        try {
+            const res = await fetch('/api/templates/common', { method:'POST', body: fd });
+            const data = await res.json().catch(()=> ({}));
+
+            if (!res.ok || !data.success) {
+                alert('등록 실패: ' + (data.message || '서버 오류'));
+                return;
+            }
+
+            alert(data.message || '등록 완료');
+            location.href = '/main';
+        } catch (error) {
+            alert('등록 중 오류가 발생했습니다: ' + error.message);
+        }
+    }
+</script>
+</body>
+</html>
