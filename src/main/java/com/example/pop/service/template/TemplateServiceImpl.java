@@ -1,5 +1,6 @@
 package com.example.pop.service.template;
 
+import com.example.pop.exception.InvalidRequestException;
 import com.example.pop.mapper.PopTemplateMapper;
 import com.example.pop.vo.PopTemplateVO;
 import lombok.RequiredArgsConstructor;
@@ -110,13 +111,20 @@ public class TemplateServiceImpl implements TemplateService {
     @Override
     @Transactional
     public int createTemplate(PopTemplateVO vo) {
-        if (vo.getTplNm() == null || vo.getTplNm().isBlank()) throw new RuntimeException("템플릿 이름 필수");
-        if (vo.getLayoutType() == null || vo.getLayoutType().isBlank()) throw new RuntimeException("layoutType 필수");
+        //  커스텀 예외로 변경
+        if (vo.getTplNm() == null || vo.getTplNm().isBlank()) {
+            throw new InvalidRequestException("템플릿 이름은 필수입니다.");
+        }
+        
+        if (vo.getLayoutType() == null || vo.getLayoutType().isBlank()) {
+            throw new InvalidRequestException("레이아웃 타입은 필수입니다.");
+        }
 
         // tpl_common dummy 기본값 보정
-        if (vo.getTplCommon() == null || vo.getTplCommon().isBlank()) vo.setTplCommon("001");
+        if (vo.getTplCommon() == null || vo.getTplCommon().isBlank()) {
+            vo.setTplCommon("001");
+        }
 
         return popTemplateMapper.insertTemplate(vo);
     }
 }
-

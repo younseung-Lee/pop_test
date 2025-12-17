@@ -59,12 +59,328 @@ const PopEditor = (() => {
         bindCanvasPanZoom();
     }
 
+    // ===== 확대/축소 & 팬 =====
+    function bindCanvasPanZoom() {
+        if (!editCanvas) return;
+
+        // 마우스 휠 줌
+        editCanvas.on('mouse:wheel', function (opt) {
+            const delta = opt.e.deltaY;
+            let zoom = editCanvas.getZoom();
+
+            // 휠 방향에 따라 줌 값 변경
+            zoom *= Math.pow(0.999, delta);
+
+            // 최소/최대 줌 제한 (1% ~ 2000%)
+            if (zoom > 20) zoom = 20;
+            if (zoom < 0.01) zoom = 0.01;
+
+            // 커서 위치를 기준으로 줌
+            editCanvas.zoomToPoint(
+                { x: opt.e.offsetX, y: opt.e.offsetY },
+                zoom
+            );
+
+            opt.e.preventDefault();
+            opt.e.stopPropagation();
+        });
+
+        // Alt + Drag 로 패닝
+        editCanvas.on('mouse:down', function (opt) {
+            const evt = opt.e;
+            if (evt.altKey === true) {
+                this.isDragging = true;
+                this.selection = false;
+                this.lastPosX = evt.clientX;
+                this.lastPosY = evt.clientY;
+            }
+        });
+
+        editCanvas.on('mouse:move', function (opt) {
+            if (this.isDragging) {
+                const e = opt.e;
+                const vpt = this.viewportTransform;
+                vpt[4] += e.clientX - this.lastPosX;
+                vpt[5] += e.clientY - this.lastPosY;
+                this.requestRenderAll();
+                this.lastPosX = e.clientX;
+                this.lastPosY = e.clientY;
+            }
+        });
+
+        editCanvas.on('mouse:up', function () {
+            this.setViewportTransform(this.viewportTransform);
+            this.isDragging = false;
+            this.selection = true;
+        });
+    }
+
+    // 빈 캔버스 안내 메시지 표시/숨김
+    function updateEmptyMessage() {
+        const msg = document.querySelector('.empty-canvas-message');
+        if (!msg || !editCanvas) return;
+
+        const hasObjects = editCanvas.getObjects().length > 0;
+        const hasBg = !!editCanvas.backgroundImage;
+        msg.style.display = (hasObjects || hasBg) ? 'none' : 'block';
+    }
+
+    // ===== 미리보기 동기화 =====
+    async function syncPreview() {
+        if (!editCanvas || !previewCanvas) return;
+
+        const json = editCanvas.toJSON();
+        previewCanvas.clear();
+
+        try {
+            await previewCanvas.loadFromJSON(json);
+
+            const scaleX = previewCanvas.getWidth() / editCanvas.getWidth();
+            const scaleY = previewCanvas.getHeight() / editCanvas.getHeight();
+            const zoom = Math.min(scaleX, scaleY);
+
+            previewCanvas.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
+            previewCanvas.renderAll();
+        } catch (error) {
+            console.error('미리보기 동기화 실패:', error);
+        }
+    }
+
+    // ===== 새 문서 =====
+    function newWork() {
+        if (!editCanvas) return;
+        if (!confirm('현재 작업 내용을 지우고 새 문서를 시작할까요?')) return;
+
+        editCanvas.clear();
+        editCanvas.setDimensions({ width: 800, height: 600 });
+        editCanvas.backgroundColor = '#ffffff';
+        editCanvas.renderAll();
+
+        editCanvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+
+        editCanvas.renderAll();
+
+        updateEmptyMessage();
+        syncPreview();
+    }
+
+    // ===== 텍스트 추가 =====
+    function addText() {
+        if (!editCanvas) return;
+
+        const fontSizeSelect = document.getElementById('fontSizeSelect');
+        const fontFamilySelect = document.getElementById('fontFamilySelect');
+
+        const fontSize = fontSizeSelect ? parseInt(fontSizeSelect.value, 10) : 36;
+        const fontFamily = fontFamilySelect ? fontFamilySelect.value : 'Malgun Gothic';
+
+        const textbox = new fabric.Textbox('새 텍스트', {
+            left: 100,
+            top: 100,
+            width: 400,
+            fontSize,
+            fontFamily,
+            fill: '#000000'
+        });
+
+        editCanvas.add(textbox);
+        editCanvas.setActiveObject(textbox);
+        editCanvas.renderAll();
+        updateEmptyMessage();
+        syncPreview();
+    }
+
+    // ===== 도형 추가 =====
+    function addShape(shapeType = 'rectangle') {
+        if (!editCanvas) return;
+
+        let shape;
+        if (shapeType === 'circle') {
+            shape = new fabric.Circle({
+                radius: 75,
+                left: 150,
+                top: 150,
+                fill: 'transparent',  // 투명 (색없음)
+                stroke: '#000000',
+                strokeWidth: 2
+            });
+        } else {
+            shape = new fabric.Rect({
+                left: 150,
+                top: 150,
+                width: 150,
+                height: 150,
+                fill: 'transparent',
+                stroke: '#000000',
+                strokeWidth: 2
+            });
+        }
+
+        editCanvas.add(shape);
+        editCanvas.setActiveObject(shape);
+        editCanvas.renderAll();
+        updateEmptyMessage();
+        syncPreview();
+    }
+
+    // ===== 이미지 추가(파일 선택 트리거) =====
+    function addImage() {
+        const input = document.getElementById('imageFileInput');
+        if (input) {
+            input.value = '';
+            input.click();
+        }
+    }
+
+    // 이미지 파일 업로드 처리
+    function bindImageUpload() {
+        const imageInput = document.getElementById('imageFileInput');
+        if (!imageInput) return;
+
+        imageInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                try {
+                    const img = await fabric.FabricImage.fromURL(event.target.result, {
+                        crossOrigin: 'anonymous'
+                    });
+
+                    img.scaleToWidth(200);
+                    img.set({ left: 100, top: 100 });
+                    editCanvas.add(img);
+                    editCanvas.setActiveObject(img);
+                    editCanvas.renderAll();
+                    updateEmptyMessage();
+                    syncPreview();
+                } catch (error) {
+                    console.error('이미지 로드 실패:', error);
+                    alert('이미지를 불러오는데 실패했습니다.');
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // ===== 선택 삭제 =====
+    function deleteSelected() {
+        if (!editCanvas) return;
+        const obj = editCanvas.getActiveObject();
+        if (obj) {
+            editCanvas.remove(obj);
+            editCanvas.renderAll();
+            updateEmptyMessage();
+            syncPreview();
+        }
+    }
+
+    // ===== 색상 적용 =====
+    function applyColors() {
+        if (!editCanvas) return;
+        const obj = editCanvas.getActiveObject();
+        if (!obj) {
+            alert('색상을 적용할 객체를 먼저 선택해주세요.');
+            return;
+        }
+
+        const fillColorPicker = document.getElementById('fillColorPicker');
+        const strokeColorPicker = document.getElementById('strokeColorPicker');
+
+        const fillColor = fillColorPicker ? fillColorPicker.value : '#ffffff';
+        const strokeColor = strokeColorPicker ? strokeColorPicker.value : '#000000';
+
+        if (obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text') {
+            obj.set('fill', fillColor);
+        } else {
+            obj.set({
+                fill: fillColor,
+                stroke: strokeColor,
+                strokeWidth: obj.strokeWidth || 2
+            });
+        }
+
+        editCanvas.renderAll();
+        syncPreview();
+    }
+
+    // ===== 색상 제거 (투명하게) =====
+    function removeColors() {
+        if (!editCanvas) return;
+        const obj = editCanvas.getActiveObject();
+        if (!obj) {
+            alert('색상을 제거할 객체를 먼저 선택해주세요.');
+            return;
+        }
+
+        if (obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text') {
+            alert('텍스트의 색상은 제거할 수 없습니다.');
+            return;
+        }
+
+        obj.set({
+            fill: 'transparent',
+            stroke: obj.stroke || '#000000',
+            strokeWidth: obj.strokeWidth || 2
+        });
+
+        editCanvas.renderAll();
+        syncPreview();
+    }
+
+    // ===== 텍스트 스타일 적용 (폰트, 크기) =====
+    function applyTextStyle() {
+        if (!editCanvas) return;
+        const obj = editCanvas.getActiveObject();
+        if (!obj) {
+            alert('폰트를 적용할 텍스트를 먼저 선택해주세요.');
+            return;
+        }
+
+        if (obj.type !== 'textbox' && obj.type !== 'text' && obj.type !== 'i-text') {
+            alert('텍스트 객체만 폰트를 변경할 수 있습니다.');
+            return;
+        }
+
+        const fontSizeSelect = document.getElementById('fontSizeSelect');
+        const fontFamilySelect = document.getElementById('fontFamilySelect');
+
+        const fontSize = fontSizeSelect ? parseInt(fontSizeSelect.value, 10) : 36;
+        const fontFamily = fontFamilySelect ? fontFamilySelect.value : 'Malgun Gothic';
+
+        obj.set({
+            fontSize: fontSize,
+            fontFamily: fontFamily
+        });
+
+        editCanvas.renderAll();
+        syncPreview();
+    }
+
+    // ===== 앞으로, 뒤로 =====
+    function bringForward() {
+        if (!editCanvas) return;
+        const obj = editCanvas.getActiveObject();
+        if (!obj) return;
+        editCanvas.bringObjectForward(obj);
+        editCanvas.renderAll();
+        syncPreview();
+    }
+
+    function sendBackward() {
+        if (!editCanvas) return;
+        const obj = editCanvas.getActiveObject();
+        if (!obj) return;
+        editCanvas.sendObjectBackwards(obj);
+        editCanvas.renderAll();
+        syncPreview();
+    }
+
     // ===== 템플릿 로드 =====
     async function loadTemplate(el) {
         if (!editCanvas || !el) return;
 
-        // ✅ 선택된 템플릿 메타 저장 (공통/우리매장 상관없이 "현재 기반 템플릿"으로 쓰되,
-        //    우리매장 저장은 "공통 기반"이므로 COMMON일 때만 강제 체크할 거야.
         selectedCommonTemplate = {
             tplId: el.getAttribute('data-template-id'),
             bgImgUrl: el.getAttribute('data-bg'),
@@ -169,10 +485,7 @@ const PopEditor = (() => {
                 const totalEl = document.getElementById('templateTotalCount');
                 if (totalEl) totalEl.textContent = totalCount;
 
-                // 현재 선택된 레이아웃/카테고리 라벨 갱신
                 updateFilterLabels(layoutType, category, source);
-
-                // 페이징 UI 갱신
                 updatePaginationUI(totalCount);
 
                 if (templates.length === 0) {
@@ -191,12 +504,10 @@ const PopEditor = (() => {
                     const item = document.createElement('div');
                     item.className = 'template-item';
 
-                    // ✅ 데이터셋에 카테고리/레이아웃도 같이 심어둠 (우리매장 저장 시 상속)
                     item.setAttribute('data-template-id', tpl.tplId);
                     item.setAttribute('data-bg', tpl.bgImgUrl);
                     item.setAttribute('data-layout', tpl.layoutType);
 
-                    // ⚠️ VO 필드명이 tplCtgyBig 형태라서 아래처럼 사용
                     item.setAttribute('data-ctgy-big', tpl.tplCtgyBig || '');
                     item.setAttribute('data-ctgy-mid', tpl.tplCtgyMid || '');
                     item.setAttribute('data-ctgy-sml', tpl.tplCtgySml || '');
@@ -284,28 +595,18 @@ const PopEditor = (() => {
         if (nextBtn) nextBtn.disabled = (templatePage >= totalPages);
     }
 
-    // ===== ✅ 우리매장 저장 (공통 템플릿 기반 복제 + 편집 JSON 저장) =====
+    // 우리매장 저장
     async function saveWork() {
         if (!editCanvas) return;
 
-        // ✅ 우리매장 템플릿은 "공통 템플릿 기반"이어야 함
-        if (templateSource !== 'COMMON') {
-            alert('우리 매장 템플릿은 공통 템플릿을 선택한 후 편집하여 저장해야 합니다.\n좌측 상단에서 "공통 템플릿"으로 전환 후 선택해주세요.');
-            return;
-        }
-        if (!selectedCommonTemplate || !selectedCommonTemplate.tplId) {
-            alert('먼저 공통 템플릿을 선택한 뒤 편집 후 저장해 주세요.');
-            return;
-        }
+
 
         const tplNm = prompt('저장할 우리 매장 템플릿 이름을 입력하세요.');
         if (!tplNm || !tplNm.trim()) return;
 
         const payload = {
-            // 사용자 입력 이름
             tplNm: tplNm.trim(),
 
-            // ✅ 공통 템플릿에서 상속
             layoutType: selectedCommonTemplate.layoutType,
             bgImgUrl: selectedCommonTemplate.bgImgUrl,
             tplCtgyBig: selectedCommonTemplate.ctgyBig,
@@ -313,9 +614,7 @@ const PopEditor = (() => {
             tplCtgySml: selectedCommonTemplate.ctgySml,
             tplCtgySub: selectedCommonTemplate.ctgySub,
 
-            // ✅ 편집 결과 JSON
             tplJson: JSON.stringify(editCanvas.toJSON()),
-
             useYn: 'Y'
         };
 
@@ -334,28 +633,32 @@ const PopEditor = (() => {
             }
 
             alert('우리 매장 템플릿 저장 완료!');
-
-            // 저장 후 "우리 마트 템플릿"으로 전환해 보여주고 싶으면:
-            // const sourceSel = document.getElementById('templateSource');
-            // if (sourceSel) sourceSel.value = 'MY';
-            // templateSource = 'MY';
-            // templatePage = 1;
-            // filterTemplateByLayout();
-
         } catch (e) {
             console.error(e);
             alert('저장 중 오류가 발생했습니다.');
         }
     }
 
-
     // ===== DOM 이벤트 바인딩 =====
     document.addEventListener('DOMContentLoaded', () => {
         initCanvases();
         bindImageUpload();
-        bindColorPickerSync();
 
-        // 초기 템플릿 조회
+        //  메인 진입 시: 무조건 "공통 템플릿 + 전체 필터 + 1페이지"
+        const sourceSel = document.getElementById('templateSource');
+        const layoutSel = document.getElementById('templateLayout');
+        const categorySel = document.getElementById('templateCategory');
+
+        if (sourceSel) sourceSel.value = 'COMMON';
+        if (layoutSel) layoutSel.value = '';
+        if (categorySel) categorySel.value = '';
+
+        templateSource = 'COMMON';
+        templatePage = 1;
+        lastLayoutFilter = '';
+        lastCategoryFilter = '';
+
+        //  초기 템플릿 조회(공통)
         filterTemplateByLayout();
 
         // 템플릿 카드 클릭: 이벤트 위임
@@ -363,9 +666,7 @@ const PopEditor = (() => {
         if (templateList) {
             templateList.addEventListener('click', (e) => {
                 const item = e.target.closest('.template-item');
-                if (item) {
-                    loadTemplate(item);
-                }
+                if (item) loadTemplate(item);
             });
         }
 
