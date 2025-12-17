@@ -90,7 +90,7 @@ const PopEditor = (() => {
             const evt = opt.e;
             if (evt.altKey === true) {
                 this.isDragging = true;
-                this.selection = false; // 드래그 중엔 오브젝트 선택 비활성화
+                this.selection = false;
                 this.lastPosX = evt.clientX;
                 this.lastPosY = evt.clientY;
             }
@@ -100,7 +100,6 @@ const PopEditor = (() => {
             if (this.isDragging) {
                 const e = opt.e;
                 const vpt = this.viewportTransform;
-                // 이동량만큼 viewport 이동
                 vpt[4] += e.clientX - this.lastPosX;
                 vpt[5] += e.clientY - this.lastPosY;
                 this.requestRenderAll();
@@ -110,7 +109,6 @@ const PopEditor = (() => {
         });
 
         editCanvas.on('mouse:up', function () {
-            // 상호작용 재계산
             this.setViewportTransform(this.viewportTransform);
             this.isDragging = false;
             this.selection = true;
@@ -135,7 +133,6 @@ const PopEditor = (() => {
         previewCanvas.clear();
 
         try {
-            // v6: loadFromJSON은 Promise를 반환
             await previewCanvas.loadFromJSON(json);
 
             const scaleX = previewCanvas.getWidth() / editCanvas.getWidth();
@@ -213,7 +210,7 @@ const PopEditor = (() => {
                 top: 150,
                 width: 150,
                 height: 150,
-                fill: 'transparent',  // 투명 (색없음)
+                fill: 'transparent',
                 stroke: '#000000',
                 strokeWidth: 2
             });
@@ -247,7 +244,6 @@ const PopEditor = (() => {
             const reader = new FileReader();
             reader.onload = async (event) => {
                 try {
-                    // v6: fabric.Image.fromURL은 Promise를 반환
                     const img = await fabric.FabricImage.fromURL(event.target.result, {
                         crossOrigin: 'anonymous'
                     });
@@ -295,11 +291,9 @@ const PopEditor = (() => {
         const fillColor = fillColorPicker ? fillColorPicker.value : '#ffffff';
         const strokeColor = strokeColorPicker ? strokeColorPicker.value : '#000000';
 
-        // 텍스트는 fill만 적용
         if (obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text') {
             obj.set('fill', fillColor);
         } else {
-            // 도형은 fill과 stroke 모두 적용
             obj.set({
                 fill: fillColor,
                 stroke: strokeColor,
@@ -320,13 +314,11 @@ const PopEditor = (() => {
             return;
         }
 
-        // 텍스트는 fill만 제거하지 않음 (검은색 유지)
         if (obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text') {
             alert('텍스트의 색상은 제거할 수 없습니다.');
             return;
         }
 
-        // 도형은 fill을 투명으로, stroke는 유지
         obj.set({
             fill: 'transparent',
             stroke: obj.stroke || '#000000',
@@ -346,7 +338,6 @@ const PopEditor = (() => {
             return;
         }
 
-        // 텍스트 객체인지 확인
         if (obj.type !== 'textbox' && obj.type !== 'text' && obj.type !== 'i-text') {
             alert('텍스트 객체만 폰트를 변경할 수 있습니다.');
             return;
@@ -390,8 +381,6 @@ const PopEditor = (() => {
     async function loadTemplate(el) {
         if (!editCanvas || !el) return;
 
-        // ✅ 선택된 템플릿 메타 저장 (공통/우리매장 상관없이 "현재 기반 템플릿"으로 쓰되,
-        //    우리매장 저장은 "공통 기반"이므로 COMMON일 때만 강제 체크할 거야.
         selectedCommonTemplate = {
             tplId: el.getAttribute('data-template-id'),
             bgImgUrl: el.getAttribute('data-bg'),
@@ -496,10 +485,7 @@ const PopEditor = (() => {
                 const totalEl = document.getElementById('templateTotalCount');
                 if (totalEl) totalEl.textContent = totalCount;
 
-                // 현재 선택된 레이아웃/카테고리 라벨 갱신
                 updateFilterLabels(layoutType, category, source);
-
-                // 페이징 UI 갱신
                 updatePaginationUI(totalCount);
 
                 if (templates.length === 0) {
@@ -518,12 +504,10 @@ const PopEditor = (() => {
                     const item = document.createElement('div');
                     item.className = 'template-item';
 
-                    // ✅ 데이터셋에 카테고리/레이아웃도 같이 심어둠 (우리매장 저장 시 상속)
                     item.setAttribute('data-template-id', tpl.tplId);
                     item.setAttribute('data-bg', tpl.bgImgUrl);
                     item.setAttribute('data-layout', tpl.layoutType);
 
-                    // ⚠️ VO 필드명이 tplCtgyBig 형태라서 아래처럼 사용
                     item.setAttribute('data-ctgy-big', tpl.tplCtgyBig || '');
                     item.setAttribute('data-ctgy-mid', tpl.tplCtgyMid || '');
                     item.setAttribute('data-ctgy-sml', tpl.tplCtgySml || '');
@@ -611,19 +595,18 @@ const PopEditor = (() => {
         if (nextBtn) nextBtn.disabled = (templatePage >= totalPages);
     }
 
-    //   우리매장 저장 (공통 템플릿 기반 복제 + 편집 JSON 저장)
+    // 우리매장 저장
     async function saveWork() {
         if (!editCanvas) return;
+
 
 
         const tplNm = prompt('저장할 우리 매장 템플릿 이름을 입력하세요.');
         if (!tplNm || !tplNm.trim()) return;
 
         const payload = {
-            // 사용자 입력 이름
             tplNm: tplNm.trim(),
 
-            // ✅ 공통 템플릿에서 상속
             layoutType: selectedCommonTemplate.layoutType,
             bgImgUrl: selectedCommonTemplate.bgImgUrl,
             tplCtgyBig: selectedCommonTemplate.ctgyBig,
@@ -631,9 +614,7 @@ const PopEditor = (() => {
             tplCtgySml: selectedCommonTemplate.ctgySml,
             tplCtgySub: selectedCommonTemplate.ctgySub,
 
-            // ✅ 편집 결과 JSON
             tplJson: JSON.stringify(editCanvas.toJSON()),
-
             useYn: 'Y'
         };
 
@@ -652,28 +633,32 @@ const PopEditor = (() => {
             }
 
             alert('우리 매장 템플릿 저장 완료!');
-
-            // 저장 후 "우리 마트 템플릿"으로 전환해 보여주고 싶으면:
-            // const sourceSel = document.getElementById('templateSource');
-            // if (sourceSel) sourceSel.value = 'MY';
-            // templateSource = 'MY';
-            // templatePage = 1;
-            // filterTemplateByLayout();
-
         } catch (e) {
             console.error(e);
             alert('저장 중 오류가 발생했습니다.');
         }
     }
 
-
     // ===== DOM 이벤트 바인딩 =====
     document.addEventListener('DOMContentLoaded', () => {
         initCanvases();
         bindImageUpload();
-        bindColorPickerSync();
 
-        // 초기 템플릿 조회
+        //  메인 진입 시: 무조건 "공통 템플릿 + 전체 필터 + 1페이지"
+        const sourceSel = document.getElementById('templateSource');
+        const layoutSel = document.getElementById('templateLayout');
+        const categorySel = document.getElementById('templateCategory');
+
+        if (sourceSel) sourceSel.value = 'COMMON';
+        if (layoutSel) layoutSel.value = '';
+        if (categorySel) categorySel.value = '';
+
+        templateSource = 'COMMON';
+        templatePage = 1;
+        lastLayoutFilter = '';
+        lastCategoryFilter = '';
+
+        //  초기 템플릿 조회(공통)
         filterTemplateByLayout();
 
         // 템플릿 카드 클릭: 이벤트 위임
@@ -681,9 +666,7 @@ const PopEditor = (() => {
         if (templateList) {
             templateList.addEventListener('click', (e) => {
                 const item = e.target.closest('.template-item');
-                if (item) {
-                    loadTemplate(item);
-                }
+                if (item) loadTemplate(item);
             });
         }
 

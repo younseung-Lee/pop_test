@@ -1,5 +1,8 @@
 package com.example.pop.controller;
 
+import com.example.pop.exception.ForbiddenException;
+import com.example.pop.exception.InvalidRequestException;
+import com.example.pop.exception.UnauthorizedException;
 import com.example.pop.service.template.TemplateService;
 import com.example.pop.vo.MartIpVO;
 import com.example.pop.vo.PopTemplateVO;
@@ -12,7 +15,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -24,7 +26,7 @@ public class TemplateController {
 
 
     /**
-     * ✅ 공통 템플릿 등록 (a4 관리자만) - 파일 업로드만
+     *  공통 템플릿 등록 (a4 관리자만) - 파일 업로드만
      * POST /api/templates/common (multipart/form-data)
      */
     @PostMapping(value = "/templates/common", consumes = "multipart/form-data")
@@ -40,10 +42,21 @@ public class TemplateController {
             @RequestParam List<MultipartFile> templateImages,
             HttpSession session
     ) {
+        //  인증 체크
         MartIpVO user = (MartIpVO) session.getAttribute("user");
-        if (user == null) throw new RuntimeException("로그인 정보가 없습니다.");
-        if (!"a4".equalsIgnoreCase(user.getId())) throw new RuntimeException("권한 없음(a4만 가능)");
-        if (templateImages == null || templateImages.isEmpty()) throw new RuntimeException("템플릿 이미지 파일이 없습니다.");
+        if (user == null) {
+            throw new UnauthorizedException("로그인이 필요합니다.");
+        }
+        
+        //  권한 체크
+        if (!"a4".equalsIgnoreCase(user.getId())) {
+            throw new ForbiddenException("공통 템플릿 등록 권한이 없습니다. (관리자 전용)");
+        }
+        
+        //  파일 검증
+        if (templateImages == null || templateImages.isEmpty()) {
+            throw new InvalidRequestException("템플릿 이미지 파일이 필요합니다.");
+        }
 
         int successCount = 0;
 
@@ -61,7 +74,7 @@ public class TemplateController {
 
             vo.setTplJson(tplJson);
 
-            // ✅ 공통 템플릿 강제
+            //  공통 템플릿 강제
             vo.setIsCommon("Y");
             vo.setMartCd("a4"); // NOT NULL이라 반드시 들어가야 함
 
@@ -71,9 +84,6 @@ public class TemplateController {
             vo.setRegId("a4");
             vo.setModId("a4");
 
-            // TODO: 실제 업로드 후 URL 저장
-            // String uploadedUrl = fileUploadService.upload(file);
-            // vo.setBgImgUrl(uploadedUrl);
             vo.setBgImgUrl(file.getOriginalFilename());
 
             int inserted = templateService.createTemplate(vo);
@@ -87,7 +97,7 @@ public class TemplateController {
     }
 
     /**
-     * ✅ 우리 매장 템플릿 저장 (캔버스 편집 후 저장)
+     *  우리 매장 템플릿 저장 (캔버스 편집 후 저장)
      * - 공통 템플릿을 선택해서 편집 후 "새로 저장"하는 개념
      * - 카테고리는 이미 정해져 있으므로(=선택한 공통 템플릿에서 복사)
      *
@@ -98,22 +108,25 @@ public class TemplateController {
             @RequestBody PopTemplateVO vo,
             HttpSession session
     ) {
+        //  인증 체크
         MartIpVO user = (MartIpVO) session.getAttribute("user");
-        if (user == null) throw new RuntimeException("로그인 정보가 없습니다.");
+        if (user == null) {
+            throw new UnauthorizedException("로그인이 필요합니다.");
+        }
 
         String martCd = user.getId();
 
-        // ✅ 사용자 입력 이름 필수
+        //  사용자 입력 이름 필수
         if (vo.getTplNm() == null || vo.getTplNm().isBlank()) {
-            throw new RuntimeException("템플릿 이름(tplNm)은 필수입니다.");
+            throw new InvalidRequestException("템플릿 이름(tplNm)은 필수입니다.");
         }
 
-        // ✅ 공통 템플릿에서 편집해서 저장하는 구조면 layoutType도 공통에서 따라옴. 그래도 필수 체크.
+        //  공통 템플릿에서 편집해서 저장하는 구조면 layoutType도 공통에서 따라옴. 그래도 필수 체크.
         if (vo.getLayoutType() == null || vo.getLayoutType().isBlank()) {
-            throw new RuntimeException("layoutType은 필수입니다.");
+            throw new InvalidRequestException("layoutType은 필수입니다.");
         }
 
-        // ✅ 우리매장 저장 강제
+        //  우리매장 저장 강제
         vo.setIsCommon("N");
         vo.setMartCd(martCd);
 
@@ -125,7 +138,7 @@ public class TemplateController {
         vo.setRegId(martCd);
         vo.setModId(martCd);
 
-        // ✅ tpl_id는 bigint → Java에서 문자열 생성 금지!
+        //  tpl_id는 bigint → Java에서 문자열 생성 금지!
         // tpl_id는 MyBatis INSERT에서 UUID_SHORT()로 생성하게 만들 것 (아래 Mapper 수정 필요)
 
         int inserted = templateService.createTemplate(vo);
@@ -182,10 +195,10 @@ public class TemplateController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-
+        //  인증 체크
         MartIpVO user = (MartIpVO) session.getAttribute("user");
         if (user == null) {
-            throw new RuntimeException("로그인 정보가 없습니다.");
+            throw new UnauthorizedException("로그인이 필요합니다.");
         }
 
         String martCd = user.getId();
