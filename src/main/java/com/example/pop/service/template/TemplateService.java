@@ -1,8 +1,11 @@
 package com.example.pop.service.template;
 
+import com.example.pop.vo.MartIpVO;
 import com.example.pop.vo.PopTemplateVO;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 public interface TemplateService {
 
@@ -58,4 +61,32 @@ public interface TemplateService {
     );
 
     int createTemplate(PopTemplateVO vo);
+
+    /**
+     * 공통 템플릿 등록 (관리자 전용)
+     */
+    Map<String, Object> createCommonTemplates(
+            String templateName,
+            String layoutType,
+            String useYn,
+            String ctgyBig,
+            String tplJson,
+            List<MultipartFile> templateImages,
+            MartIpVO user
+    );
+
+    /**
+     * 우리 매장 템플릿 저장
+     */
+    Map<String, Object> saveMyTemplate(PopTemplateVO vo, MartIpVO user);
+
+    /**
+     * 세션에서 사용자 정보 확인 및 검증
+     */
+    MartIpVO validateUser(MartIpVO user);
+
+    /**
+     * 관리자 권한 검증
+     */
+    void validateAdminUser(MartIpVO user);
 }
