@@ -14,15 +14,16 @@
 <body>
 <div class="wrap">
     <h2>공통 템플릿 등록 (a4 관리자)</h2>
-    <p class="hint">※ 파일 업로드만 지원합니다.</p>
+    <p class="hint">※ 파일 업로드만 지원합니다. 여러 파일을 선택하면 각각 고유한 이름으로 등록됩니다.</p>
 
     <div class="row">
-        <label>템플릿명</label>
+        <label>템플릿명 <span class="required">*</span></label>
         <input id="templateName" type="text" placeholder="예) 겨울 행사 POP" />
+        <small class="help-text">※ 여러 파일 선택 시 자동으로 구분됩니다 (예: "겨울 행사_1", "겨울 행사_2")</small>
     </div>
 
     <div class="row">
-        <label>레이아웃</label>
+        <label>레이아웃 <span class="required">*</span></label>
         <select id="layoutType">
             <option value="VERTICAL">세로형</option>
             <option value="HORIZONTAL">가로형</option>
@@ -32,29 +33,19 @@
 
     <div class="row">
         <label>카테고리(대)</label>
-        <input id="ctgyBig" type="text" placeholder="EVT" />
-    </div>
-    <div class="row">
-        <label>카테고리(중)</label>
-        <input id="ctgyMid" type="text" />
-    </div>
-    <div class="row">
-        <label>카테고리(소)</label>
-        <input id="ctgySml" type="text" />
-    </div>
-    <div class="row">
-        <label>카테고리(서브)</label>
-        <input id="ctgySub" type="text" />
+        <input id="ctgyBig" type="text" placeholder="예) EVT, SALE, NORMAL" />
+        <small class="help-text">※ 선택사항입니다</small>
     </div>
 
     <div class="row">
         <label>템플릿 JSON</label>
-        <textarea id="tplJson" class="json" placeholder='{"objects":[...]} (선택)'></textarea>
+        <textarea id="tplJson" class="json" placeholder='{"objects":[...]} (선택사항)'></textarea>
     </div>
 
     <div class="row">
-        <label>템플릿 이미지</label>
+        <label>템플릿 이미지 <span class="required">*</span></label>
         <input id="templateImages" type="file" accept="image/*" multiple onchange="handleFileSelect(event)" />
+        <small class="help-text">※ 여러 파일 선택 가능 (Ctrl/Cmd 클릭)</small>
     </div>
 
     <!-- 미리보기 섹션 -->
@@ -170,9 +161,6 @@
         const templateName = document.getElementById('templateName').value.trim();
         const layoutType = document.getElementById('layoutType').value;
         const ctgyBig = document.getElementById('ctgyBig').value.trim();
-        const ctgyMid = document.getElementById('ctgyMid').value.trim();
-        const ctgySml = document.getElementById('ctgySml').value.trim();
-        const ctgySub = document.getElementById('ctgySub').value.trim();
         const tplJson = document.getElementById('tplJson').value.trim();
 
         if (!templateName) return alert('템플릿명을 입력하세요.');
@@ -182,12 +170,18 @@
         const fd = new FormData();
         fd.append('templateName', templateName);
         fd.append('layoutType', layoutType);
-        fd.append('ctgyBig', ctgyBig);
-        fd.append('ctgyMid', ctgyMid);
-        fd.append('ctgySml', ctgySml);
-        fd.append('ctgySub', ctgySub);
-        fd.append('tplJson', tplJson);
+        
+        // 카테고리 대분류만 전송 (값이 있을 때만)
+        if (ctgyBig) {
+            fd.append('ctgyBig', ctgyBig);
+        }
+        
+        // 템플릿 JSON (선택사항)
+        if (tplJson) {
+            fd.append('tplJson', tplJson);
+        }
 
+        // 파일 추가
         selectedFiles.forEach(file => fd.append('templateImages', file));
 
         try {
@@ -199,12 +193,28 @@
                 return;
             }
 
-            alert(data.message || '등록 완료');
+            const message = data.message || '등록 완료';
+            const details = data.totalFiles ? `\n(전체: ${data.totalFiles}개, 성공: ${data.successCount}개)` : '';
+            alert(message + details);
             location.href = '/main';
         } catch (error) {
             alert('등록 중 오류가 발생했습니다: ' + error.message);
         }
     }
 </script>
+
+<style>
+    .required {
+        color: #e74c3c;
+        font-weight: bold;
+    }
+    
+    .help-text {
+        display: block;
+        margin-top: 4px;
+        color: #7f8c8d;
+        font-size: 0.9em;
+    }
+</style>
 </body>
 </html>

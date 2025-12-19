@@ -49,8 +49,11 @@ public class LoginController {
 
     @GetMapping("/main")
     public String main(HttpSession session, Model model) {
-        MartIpVO user = (MartIpVO) session.getAttribute("user");
-        if (user == null) return "redirect:/login";
+        MartIpVO user = loginService.getLoginUser(session);
+        
+        if (user == null) {
+            return "redirect:/login";
+        }
 
         model.addAttribute("user", user);
         return "main";
@@ -58,7 +61,7 @@ public class LoginController {
 
     @GetMapping("/")
     public String home(HttpSession session) {
-        return (session.getAttribute("user") != null)
+        return loginService.isLoggedIn(session)
                 ? "redirect:/main"
                 : "redirect:/login";
     }
