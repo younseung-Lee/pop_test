@@ -22,6 +22,7 @@ import java.util.Map;
 public class TemplateServiceImpl implements TemplateService {
 
     private final PopTemplateMapper popTemplateMapper;
+    private final com.example.pop.service.file.FileStorageService fileStorageService;
 
     private int calcOffset(int page, int size) {
         int safePage = (page <= 0) ? 1 : page;
@@ -307,6 +308,7 @@ public class TemplateServiceImpl implements TemplateService {
      * 공통 템플릿 VO 생성 헬퍼 메서드
      * 
      * 카테고리 대분류만 입력받고, 중/소/세분류는 null로 설정
+     * 파일을 실제로 저장하고 URL을 설정
      */
     private PopTemplateVO buildCommonTemplateVO(
             String templateName,
@@ -316,6 +318,16 @@ public class TemplateServiceImpl implements TemplateService {
             String tplJson,
             MultipartFile file
     ) {
+        // 파일 검증
+        if (!fileStorageService.isImageFile(file)) {
+            throw new InvalidRequestException("이미지 파일만 업로드 가능합니다.");
+        }
+        
+        fileStorageService.validateFileSize(file, 10); // 10MB 제한
+
+        // 파일 저장 및 URL 반환
+        String fileUrl = fileStorageService.storeFile(file);
+        
         PopTemplateVO vo = new PopTemplateVO();
         vo.setTplNm(templateName);
         vo.setLayoutType(layoutType);
@@ -337,7 +349,10 @@ public class TemplateServiceImpl implements TemplateService {
         vo.setRegId("a4");
         vo.setModId("a4");
 
-        vo.setBgImgUrl(file.getOriginalFilename());
+        // 저장된 파일의 URL 경로 설정
+        vo.setBgImgUrl(fileUrl);
+
+        log.info("파일 저장 완료 - 원본: {}, URL: {}", file.getOriginalFilename(), fileUrl);
 
         return vo;
     }
@@ -350,5 +365,43 @@ public class TemplateServiceImpl implements TemplateService {
     @Override
     public List<String> getDistinctCategoriesByMartCd(String martCd) {
         return popTemplateMapper.selectDistinctCtgyBigByMartCd(martCd);
+    }
+
+    @Override
+    @Transactional
+    public Map<String, Object> deleteTemplate(Long tplSeq, MartIpVO user) {
+        // 관리자 권한 검증
+        validateAdminUser(user);
+
+        // 템플릿 조회
+        PopTemplateVO template = popTemplateMapper.selectByTplSeq(tplSeq);
+        
+        if (template == null) {
+            throw new com.example.pop.exception.ResourceNotFoundException(
+                "템플릿을 찾을 수 없습니다. (tplSeq: " + tplSeq + ")"
+            );
+        }
+
+        // 파일 삭제 (실패해도 진행)
+        if (template.getBgImgUrl() != null && !template.getBgImgUrl().isEmpty()) {
+            boolean fileDeleted = fileStorageService.deleteFile(template.getBgImgUrl());
+            if (!fileDeleted) {
+                log.warn("파일 삭제 실패 (계속 진행): {}", template.getBgImgUrl());
+            }
+        }
+
+        // DB에서 삭제
+        int deleted = popTemplateMapper.deleteTemplate(tplSeq);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", deleted > 0);
+        result.put("tplSeq", tplSeq);
+        result.put("tplNm", template.getTplNm());
+        
+        if (deleted > 0) {
+            log.info("템플릿 삭제 성공: tplSeq={}, tplNm={}", tplSeq, template.getTplNm());
+        }
+        
+        return result;
     }
 }

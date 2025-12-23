@@ -154,4 +154,17 @@ public class TemplateController {
                 "categories", categories
         );
     }
+
+    /**
+     * 템플릿 삭제 (a4 관리자만 가능)
+     * DELETE /api/templates/{tplSeq}
+     */
+    @DeleteMapping("/templates/{tplSeq}")
+    public Map<String, Object> deleteTemplate(
+            @PathVariable Long tplSeq,
+            HttpSession session
+    ) {
+        MartIpVO user = (MartIpVO) session.getAttribute("user");
+        return templateService.deleteTemplate(tplSeq, user);
+    }
 }

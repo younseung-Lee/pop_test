@@ -229,4 +229,18 @@
         ORDER BY tpl_ctgy_big
     </select>
 
+    <!--  템플릿 조회 (tplSeq로)  -->
+    <select id="selectByTplSeq" resultMap="PopTemplateMap">
+        SELECT
+        <include refid="BaseSelectColumns"/>
+        FROM pop_tpl
+        WHERE tpl_seq = #{tplSeq}
+    </select>
+
+    <!--  템플릿 삭제 (use_yn = 'N'으로 업데이트)  -->
+    <delete id="deleteTemplate">
+        DELETE FROM pop_tpl
+        WHERE tpl_seq = #{tplSeq}
+    </delete>
+
 </mapper>

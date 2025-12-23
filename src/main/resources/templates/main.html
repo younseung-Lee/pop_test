@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>POP 작업</title>
     <link rel="stylesheet" th:href="@{/css/main.css}">
+    <link rel="stylesheet" th:href="@{/css/template_delete.css}">
 </head>
-<body>
+<body th:attr="data-user-id=${user != null ? user.id : ''}">
 <div class="header">
     <div class="header-left">
         <div class="logo">StoDay POP</div>
@@ -147,6 +148,7 @@
                          th:each="tpl : ${templateList}"
                          th:attr="
                            data-template-id=${tpl.tplId},
+                           data-tpl-seq=${tpl.tplSeq},
                            data-bg=${tpl.bgImgUrl},
                            data-layout=${tpl.layoutType},
                            data-ctgy-big=${tpl.tplCtgyBig},
@@ -158,6 +160,17 @@
                             <img th:src="${tpl.bgImgUrl}"
                                  alt="템플릿"
                                  style="width:100%;height:100%;object-fit:cover;border-radius:4px;"/>
+                            
+                            <!-- a4 관리자만 보이는 삭제 버튼 -->
+                            <button class="delete-template-btn" 
+                                    type="button"
+                                    value="DELETE"
+                                    th:if="${user != null and user.id == 'a4'}"
+                                    th:attr="data-tpl-seq=${tpl.tplSeq}, data-tpl-nm=${tpl.tplNm}"
+                                    onclick="deleteTemplate(this.dataset.tplSeq, this.dataset.tplNm)"
+                                    title="템플릿 삭제">
+                                ❌
+                            </button>
                         </div>
                         <div class="template-name" th:text="${tpl.tplNm}">샘플 템플릿</div>
                         <div class="template-size"></div>
@@ -216,6 +229,43 @@
     function logout() {
         if (confirm('로그아웃 하시겠습니까?')) {
             window.location.href = '/logout';
+        }
+    }
+
+    // 템플릿 삭제 함수
+    async function deleteTemplate(event, tplSeq, tplNm) {
+        // 이벤트 버블링 방지 (클릭 시 템플릿 로드 방지)
+        event.stopPropagation();
+        
+        if (!confirm(`"${tplNm}" 템플릿을 정말 삭제하시겠습니까?\n\n삭제된 템플릿은 복구할 수 없습니다.`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/templates/${tplSeq}`, {
+                method: 'DELETE'
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok || !data.success) {
+                const errorMsg = data.message || '삭제에 실패했습니다.';
+                alert('오류: ' + errorMsg);
+                return;
+            }
+
+            alert(`"${tplNm}" 템플릿이 삭제되었습니다.`);
+            
+            // 템플릿 목록 재로드
+            if (typeof PopEditor !== 'undefined' && PopEditor.filterTemplateByLayout) {
+                PopEditor.filterTemplateByLayout();
+            } else {
+                location.reload();
+            }
+            
+        } catch (error) {
+            console.error('삭제 중 오류:', error);
+            alert('삭제 중 오류가 발생했습니다.');
         }
     }
 

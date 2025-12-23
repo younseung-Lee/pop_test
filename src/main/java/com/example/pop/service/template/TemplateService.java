@@ -99,4 +99,9 @@ public interface TemplateService {
      * 우리 마트 템플릿의 고유 카테고리 대분류 목록 조회
      */
     List<String> getDistinctCategoriesByMartCd(String martCd);
+
+    /**
+     * 템플릿 삭제 (a4 관리자만 가능)
+     */
+    Map<String, Object> deleteTemplate(Long tplSeq, MartIpVO user);
 }
