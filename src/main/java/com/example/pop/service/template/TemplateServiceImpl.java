@@ -341,4 +341,14 @@ public class TemplateServiceImpl implements TemplateService {
 
         return vo;
     }
+
+    @Override
+    public List<String> getDistinctCategories() {
+        return popTemplateMapper.selectDistinctCtgyBig();
+    }
+
+    @Override
+    public List<String> getDistinctCategoriesByMartCd(String martCd) {
+        return popTemplateMapper.selectDistinctCtgyBigByMartCd(martCd);
+    }
 }

@@ -12,9 +12,8 @@
         <div class="logo">StoDay POP</div>
         <div class="header-buttons">
             <button class="header-btn" type="button" onclick="PopEditor.newWork()">📄 새 문서</button>
-            <button class="header-btn" type="button" onclick="PopEditor.saveWork()">💾 다른이름으로저장</button>
-            <button class="header-btn" type="button">가이드보기</button>
-            <!-- ✅ a4 관리자만 보이는 공통 템플릿 등록 버튼 -->
+            <button class="header-btn" type="button" onclick="PopEditor.saveWork()">POP 저장</button>
+            <!-- a4 관리자만 보이는 공통 템플릿 등록 버튼 -->
             <button class="header-btn"
                     type="button"
                     th:if="${user != null and user.id == 'a4'}"
@@ -80,9 +79,6 @@
         <button class="toolbar-btn" type="button" onclick="PopEditor.bringForward()">앞으로</button>
         <button class="toolbar-btn" type="button" onclick="PopEditor.sendBackward()">뒤로</button>
     </div>
-    <div class="toolbar-section">
-        <button class="toolbar-btn primary" type="button" onclick="PopEditor.saveWork()">💾 저장</button>
-    </div>
 </div>
 
 <!-- 숨김: 이미지 업로드 input -->
@@ -116,15 +112,11 @@
                     <option value="SHOWCARD">쇼카드</option>
                 </select>
 
-                <!-- 카테고리 선택: 전체 / 봄 / 여름 / 가을 / 겨울 / 명절 ... -->
+                <!-- 카테고리 선택: 동적으로 로드 -->
                 <select class="search-select" id="templateCategory"
                         onchange="PopEditor.filterTemplateByLayout()">
                     <option value="">전체 카테고리</option>
-                    <option value="봄">봄</option>
-                    <option value="여름">여름</option>
-                    <option value="가을">가을</option>
-                    <option value="겨울">겨울</option>
-                    <option value="명절">명절</option>
+                    <!-- 카테고리는 JavaScript로 동적 로드됨 -->
                 </select>
             </div>
 
@@ -226,6 +218,48 @@
             window.location.href = '/logout';
         }
     }
+
+    // 페이지 로드 시 카테고리 목록 불러오기
+    async function loadCategories() {
+        try {
+            const response = await fetch('/api/templates/categories');
+            const data = await response.json();
+
+            if (data.success && data.categories && data.categories.length > 0) {
+                const categorySelect = document.getElementById('templateCategory');
+                
+                // 기존 옵션 유지 (전체 카테고리)
+                const currentValue = categorySelect.value;
+                
+                // 기존 옵션 제거 (첫 번째 '전체 카테고리' 제외)
+                while (categorySelect.options.length > 1) {
+                    categorySelect.remove(1);
+                }
+                
+                // 새 카테고리 추가
+                data.categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category;
+                    option.textContent = category;
+                    categorySelect.appendChild(option);
+                });
+                
+                // 이전 선택값 복원
+                if (currentValue) {
+                    categorySelect.value = currentValue;
+                }
+                
+                console.log(`카테고리 ${data.categories.length}개 로드 완료`);
+            }
+        } catch (error) {
+            console.error('카테고리 로드 실패:', error);
+        }
+    }
+
+    // 페이지 로드 시 카테고리 불러오기
+    window.addEventListener('DOMContentLoaded', function() {
+        loadCategories();
+    });
 </script>
 </body>
 </html>
