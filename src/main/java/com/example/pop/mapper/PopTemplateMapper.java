@@ -70,4 +70,14 @@ public interface PopTemplateMapper {
      * 우리 마트 템플릿의 고유 카테고리 대분류 목록 조회 (특정 mart_cd)
      */
     List<String> selectDistinctCtgyBigByMartCd(@Param("martCd") String martCd);
+
+    /**
+     * 템플릿 조회 (tplSeq로)
+     */
+    PopTemplateVO selectByTplSeq(@Param("tplSeq") Long tplSeq);
+
+    /**
+     * 템플릿 삭제
+     */
+    int deleteTemplate(@Param("tplSeq") Long tplSeq);
 }

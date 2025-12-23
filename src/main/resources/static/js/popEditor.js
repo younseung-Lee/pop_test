@@ -177,7 +177,7 @@ const PopEditor = (() => {
         const textbox = new fabric.Textbox('새 텍스트', {
             left: 100,
             top: 100,
-            width: 400,
+            width: 200,
             fontSize,
             fontFamily,
             fill: '#000000'
@@ -513,6 +513,7 @@ const PopEditor = (() => {
                     item.className = 'template-item';
 
                     item.setAttribute('data-template-id', tpl.tplId);
+                    item.setAttribute('data-tpl-seq', tpl.tplSeq);
                     item.setAttribute('data-bg', tpl.bgImgUrl);
                     item.setAttribute('data-layout', tpl.layoutType);
 
@@ -531,6 +532,25 @@ const PopEditor = (() => {
                     img.style.objectFit = 'cover';
                     img.style.borderRadius = '4px';
                     thumb.appendChild(img);
+
+                    // a4 관리자에게만 삭제 버튼 표시
+                    const isAdmin = document.querySelector('[data-user-id="a4"]');
+                    if (isAdmin) {
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.className = 'delete-template-btn';
+                        deleteBtn.type = 'button';
+                        deleteBtn.textContent = '❌';
+                        deleteBtn.title = '템플릿 삭제';
+                        deleteBtn.setAttribute('data-tpl-seq', tpl.tplSeq);
+                        deleteBtn.setAttribute('data-tpl-nm', tpl.tplNm);
+                        deleteBtn.onclick = function(e) {
+                            e.stopPropagation();
+                            if (typeof deleteTemplate === 'function') {
+                                deleteTemplate(e, tpl.tplSeq, tpl.tplNm);
+                            }
+                        };
+                        thumb.appendChild(deleteBtn);
+                    }
 
                     const name = document.createElement('div');
                     name.className = 'template-name';
