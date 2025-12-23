@@ -37,10 +37,6 @@
         <small class="help-text">※ 선택사항입니다</small>
     </div>
 
-    <div class="row">
-        <label>템플릿 JSON</label>
-        <textarea id="tplJson" class="json" placeholder='{"objects":[...]} (선택사항)'></textarea>
-    </div>
 
     <div class="row">
         <label>템플릿 이미지 <span class="required">*</span></label>
@@ -161,7 +157,6 @@
         const templateName = document.getElementById('templateName').value.trim();
         const layoutType = document.getElementById('layoutType').value;
         const ctgyBig = document.getElementById('ctgyBig').value.trim();
-        const tplJson = document.getElementById('tplJson').value.trim();
 
         if (!templateName) return alert('템플릿명을 입력하세요.');
         if (!layoutType) return alert('레이아웃을 선택하세요.');
@@ -175,11 +170,7 @@
         if (ctgyBig) {
             fd.append('ctgyBig', ctgyBig);
         }
-        
-        // 템플릿 JSON (선택사항)
-        if (tplJson) {
-            fd.append('tplJson', tplJson);
-        }
+
 
         // 파일 추가
         selectedFiles.forEach(file => fd.append('templateImages', file));

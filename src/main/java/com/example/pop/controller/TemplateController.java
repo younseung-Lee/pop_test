@@ -122,4 +122,36 @@ public class TemplateController {
 
         return result;
     }
+
+    /**
+     * 공통 템플릿의 고유 카테고리 대분류 목록 조회
+     * GET /api/templates/categories
+     */
+    @GetMapping("/templates/categories")
+    public Map<String, Object> getCategories() {
+        List<String> categories = templateService.getDistinctCategories();
+        return Map.of(
+                "success", true,
+                "categories", categories
+        );
+    }
+
+    /**
+     * 우리 마트 템플릿의 고유 카테고리 대분류 목록 조회
+     * GET /api/templates/my/categories
+     */
+    @GetMapping("/templates/my/categories")
+    public Map<String, Object> getMyCategoriesByMartCd(HttpSession session) {
+        MartIpVO user = (MartIpVO) session.getAttribute("user");
+        templateService.validateUser(user);
+        
+        String martCd = user.getId();
+        List<String> categories = templateService.getDistinctCategoriesByMartCd(martCd);
+        
+        return Map.of(
+                "success", true,
+                "martCd", martCd,
+                "categories", categories
+        );
+    }
 }

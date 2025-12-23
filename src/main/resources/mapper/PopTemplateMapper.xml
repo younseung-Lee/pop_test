@@ -206,4 +206,27 @@
                  )
     </insert>
 
+    <!--  고유 카테고리 대분류 목록 조회 (공통)  -->
+    <select id="selectDistinctCtgyBig" resultType="string">
+        SELECT DISTINCT tpl_ctgy_big
+        FROM pop_tpl
+        WHERE use_yn = 'Y'
+          AND is_common = 'Y'
+          AND tpl_ctgy_big IS NOT NULL
+          AND tpl_ctgy_big != ''
+        ORDER BY tpl_ctgy_big
+    </select>
+
+    <!--  고유 카테고리 대분류 목록 조회 (우리 마트)  -->
+    <select id="selectDistinctCtgyBigByMartCd" resultType="string">
+        SELECT DISTINCT tpl_ctgy_big
+        FROM pop_tpl
+        WHERE use_yn = 'Y'
+          AND is_common = 'N'
+          AND mart_cd = #{martCd}
+          AND tpl_ctgy_big IS NOT NULL
+          AND tpl_ctgy_big != ''
+        ORDER BY tpl_ctgy_big
+    </select>
+
 </mapper>

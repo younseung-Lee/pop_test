@@ -60,4 +60,14 @@ public interface PopTemplateMapper {
     );
 
     int insertTemplate(PopTemplateVO vo);
+
+    /**
+     * 공통 템플릿의 고유 카테고리 대분류 목록 조회
+     */
+    List<String> selectDistinctCtgyBig();
+
+    /**
+     * 우리 마트 템플릿의 고유 카테고리 대분류 목록 조회 (특정 mart_cd)
+     */
+    List<String> selectDistinctCtgyBigByMartCd(@Param("martCd") String martCd);
 }

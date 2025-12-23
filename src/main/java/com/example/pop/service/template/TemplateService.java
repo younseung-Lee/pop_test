@@ -89,4 +89,14 @@ public interface TemplateService {
      * 관리자 권한 검증
      */
     void validateAdminUser(MartIpVO user);
+
+    /**
+     * 공통 템플릿의 고유 카테고리 대분류 목록 조회
+     */
+    List<String> getDistinctCategories();
+
+    /**
+     * 우리 마트 템플릿의 고유 카테고리 대분류 목록 조회
+     */
+    List<String> getDistinctCategoriesByMartCd(String martCd);
 }

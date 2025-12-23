@@ -434,7 +434,7 @@ const PopEditor = (() => {
     }
 
     // ===== 템플릿 필터(레이아웃+카테고리+타입+페이징) =====
-    function filterTemplateByLayout() {
+    async function filterTemplateByLayout() {
         const layoutSel   = document.getElementById('templateLayout');
         const categorySel = document.getElementById('templateCategory');
         const sourceSel   = document.getElementById('templateSource');
@@ -443,8 +443,16 @@ const PopEditor = (() => {
         const category   = categorySel ? categorySel.value : '';
         const source     = sourceSel ? sourceSel.value : 'COMMON';
 
-        // 템플릿 타입 상태 저장
-        templateSource = source;
+        // 템플릿 타입이 변경된 경우 카테고리 재로드
+        if (templateSource !== source) {
+            templateSource = source;
+            await loadCategories(source);
+            // 카테고리가 초기화되었으므로 현재 값을 다시 가져옴
+            const newCategory = categorySel ? categorySel.value : '';
+            lastCategoryFilter = newCategory;
+        } else {
+            templateSource = source;
+        }
 
         // 필터 변경 시 페이지를 1로 리셋
         if (layoutType !== lastLayoutFilter || category !== lastCategoryFilter) {
@@ -595,6 +603,51 @@ const PopEditor = (() => {
         if (nextBtn) nextBtn.disabled = (templatePage >= totalPages);
     }
 
+    // ===== 카테고리 동적 로드 =====
+    async function loadCategories(source) {
+        const categorySel = document.getElementById('templateCategory');
+        if (!categorySel) return;
+
+        // 엔드포인트 결정
+        const url = (source === 'MY') 
+            ? '/api/templates/my/categories' 
+            : '/api/templates/categories';
+
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (!res.ok || !data.success) {
+                console.error('카테고리 조회 실패:', data);
+                return;
+            }
+
+            const categories = data.categories || [];
+            
+            // 선택박스 초기화
+            categorySel.innerHTML = '<option value="">전체 카테고리</option>';
+            
+            // 카테고리 옵션 추가
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                categorySel.appendChild(option);
+            });
+
+            // 현재 필터 유지 (가능한 경우)
+            if (lastCategoryFilter && categories.includes(lastCategoryFilter)) {
+                categorySel.value = lastCategoryFilter;
+            } else {
+                categorySel.value = '';
+                lastCategoryFilter = '';
+            }
+
+        } catch (error) {
+            console.error('카테고리 조회 중 오류:', error);
+        }
+    }
+
     // 우리매장 저장
     async function saveWork() {
         if (!editCanvas) return;
@@ -658,8 +711,11 @@ const PopEditor = (() => {
         lastLayoutFilter = '';
         lastCategoryFilter = '';
 
-        //  초기 템플릿 조회(공통)
-        filterTemplateByLayout();
+        //  초기 카테고리 및 템플릿 조회(공통)
+        (async () => {
+            await loadCategories('COMMON');
+            filterTemplateByLayout();
+        })();
 
         // 템플릿 카드 클릭: 이벤트 위임
         const templateList = document.getElementById('templateList');
@@ -677,6 +733,28 @@ const PopEditor = (() => {
                 this.classList.add('active');
             });
         });
+
+        // 템플릿 소스 변경 시 필터링
+        if (sourceSel) {
+            sourceSel.addEventListener('change', () => {
+                templatePage = 1;
+                filterTemplateByLayout();
+            });
+        }
+
+        // 레이아웃 변경 시 필터링
+        if (layoutSel) {
+            layoutSel.addEventListener('change', () => {
+                filterTemplateByLayout();
+            });
+        }
+
+        // 카테고리 변경 시 필터링
+        if (categorySel) {
+            categorySel.addEventListener('change', () => {
+                filterTemplateByLayout();
+            });
+        }
 
         // 페이징 버튼
         const prevBtn = document.getElementById('tplPrevPage');
