@@ -220,6 +220,38 @@
 
 </div>
 
+<!-- 저장 모달 -->
+<div id="saveModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>템플릿 저장</h3>
+            <button type="button" class="modal-close" onclick="PopEditor.closeSaveModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-row">
+                <label for="saveTplNm">템플릿명 <span class="required">*</span></label>
+                <input type="text" id="saveTplNm" placeholder="예) 겨울 행사 POP" />
+            </div>
+            <div class="modal-row">
+                <label for="saveCtgyBig">카테고리(대) <span class="required">*</span></label>
+                <input type="text" id="saveCtgyBig" placeholder="예) 봄, 명절, 생선, 가을" />
+            </div>
+            <div class="modal-row">
+                <label for="saveLayoutType">레이아웃 <span class="required">*</span></label>
+                <select id="saveLayoutType">
+                    <option value="VERTICAL">세로형</option>
+                    <option value="HORIZONTAL">가로형</option>
+                    <option value="SHOWCARD">쇼카드</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn" onclick="PopEditor.closeSaveModal()">취소</button>
+            <button type="button" class="btn primary" onclick="PopEditor.confirmSave()">저장</button>
+        </div>
+    </div>
+</div>
+
 <!-- Fabric.js v6.9.0 로드 -->
 <script src="https://cdn.jsdelivr.net/npm/fabric@6.9.0/dist/index.js"></script>
 <!-- POP 에디터 스크립트 -->
