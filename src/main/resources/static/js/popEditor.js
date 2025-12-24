@@ -668,25 +668,71 @@ const PopEditor = (() => {
         }
     }
 
-    // 우리매장 저장
+    // 우리매장 저장 - 모달창으로 입력받기
     async function saveWork() {
         if (!editCanvas) return;
 
+        // 모달 열기
+        showSaveModal();
+    }
 
+    // 저장 모달 표시
+    function showSaveModal() {
+        const modal = document.getElementById('saveModal');
+        if (!modal) {
+            console.error('저장 모달을 찾을 수 없습니다.');
+            return;
+        }
 
-        const tplNm = prompt('저장할 우리 매장 템플릿 이름을 입력하세요.');
-        if (!tplNm || !tplNm.trim()) return;
+        // 입력 필드 초기화
+        document.getElementById('saveTplNm').value = '';
+        document.getElementById('saveCtgyBig').value = '';
+        document.getElementById('saveLayoutType').value = selectedCommonTemplate?.layoutType || 'VERTICAL';
+
+        modal.style.display = 'flex';
+    }
+
+    // 저장 모달 닫기
+    function closeSaveModal() {
+        const modal = document.getElementById('saveModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    // 저장 실행
+    async function confirmSave() {
+        const tplNm = document.getElementById('saveTplNm').value.trim();
+        const ctgyBig = document.getElementById('saveCtgyBig').value.trim();
+        const layoutType = document.getElementById('saveLayoutType').value;
+
+        // 유효성 검사
+        if (!tplNm) {
+            alert('템플릿명을 입력해주세요.');
+            document.getElementById('saveTplNm').focus();
+            return;
+        }
+
+        if (!ctgyBig) {
+            alert('카테고리(대)를 입력해주세요.');
+            document.getElementById('saveCtgyBig').focus();
+            return;
+        }
+
+        if (!layoutType) {
+            alert('레이아웃을 선택해주세요.');
+            document.getElementById('saveLayoutType').focus();
+            return;
+        }
 
         const payload = {
-            tplNm: tplNm.trim(),
-
-            layoutType: selectedCommonTemplate.layoutType,
-            bgImgUrl: selectedCommonTemplate.bgImgUrl,
-            tplCtgyBig: selectedCommonTemplate.ctgyBig,
-            tplCtgyMid: selectedCommonTemplate.ctgyMid,
-            tplCtgySml: selectedCommonTemplate.ctgySml,
-            tplCtgySub: selectedCommonTemplate.ctgySub,
-
+            tplNm: tplNm,
+            tplCtgyBig: ctgyBig,
+            layoutType: layoutType,
+            bgImgUrl: selectedCommonTemplate?.bgImgUrl || '',
+            tplCtgyMid: selectedCommonTemplate?.ctgyMid || '',
+            tplCtgySml: selectedCommonTemplate?.ctgySml || '',
+            tplCtgySub: selectedCommonTemplate?.ctgySub || '',
             tplJson: JSON.stringify(editCanvas.toJSON()),
             useYn: 'Y'
         };
@@ -706,6 +752,14 @@ const PopEditor = (() => {
             }
 
             alert('우리 매장 템플릿 저장 완료!');
+            closeSaveModal();
+            
+            // 우리 마트 템플릿으로 필터 전환
+            const sourceSel = document.getElementById('templateSource');
+            if (sourceSel) {
+                sourceSel.value = 'MY';
+                filterTemplateByLayout();
+            }
         } catch (e) {
             console.error(e);
             alert('저장 중 오류가 발생했습니다.');
@@ -810,7 +864,10 @@ const PopEditor = (() => {
         sendBackward,
         loadTemplate,
         filterTemplateByLayout,
-        saveWork
+        saveWork,
+        showSaveModal,
+        closeSaveModal,
+        confirmSave
     };
 })();
 

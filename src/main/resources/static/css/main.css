@@ -310,8 +310,8 @@ body {
     width: 100%;
     height: 100%;
     background-image:
-        linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+            linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
     background-size: 20px 20px;
 }
 
@@ -446,4 +446,46 @@ body {
     height: 600px;
     transform-origin: top left;
     transform: scale(0.4); /* CSS로 전체를 0.4배 축소 */
+}
+
+.modal-row input::placeholder {
+    color: #999;
+}
+
+.required {
+    color: #e74c3c;
+    font-weight: bold;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 10px;
+    padding: 16px 24px;
+    border-top: 1px solid #e5e7eb;
+    justify-content: flex-end;
+}
+
+.modal-footer .btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    background: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.modal-footer .btn:hover {
+    background-color: #f3f4f6;
+}
+
+.modal-footer .btn.primary {
+    border: none;
+    background: #667eea;
+    color: #fff;
+}
+
+.modal-footer .btn.primary:hover {
+    background: #5568d3;
 }
