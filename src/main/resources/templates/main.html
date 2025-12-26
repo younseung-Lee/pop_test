@@ -167,7 +167,7 @@
                                     value="DELETE"
                                     th:if="${user != null and user.id == 'a4'}"
                                     th:attr="data-tpl-seq=${tpl.tplSeq}, data-tpl-nm=${tpl.tplNm}"
-                                    onclick="deleteTemplate(this.dataset.tplSeq, this.dataset.tplNm)"
+                                    onclick="deleteTemplate(event, this.dataset.tplSeq, this.dataset.tplNm)"
                                     title="템플릿 삭제">
                                 ❌
                             </button>
