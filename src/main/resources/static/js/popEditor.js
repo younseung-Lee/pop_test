@@ -4,6 +4,10 @@ const PopEditor = (() => {
     let editCanvas;
     let previewCanvas;
 
+    // ✅ 미리보기 확대 모달용
+    let previewZoomCanvas;
+    let isPreviewZoomOpen = false;
+
     // ===== 템플릿 조회 상태 =====
     let templateSource = 'COMMON';      // COMMON(공통), MY(우리 마트)
     let templatePage = 1;              // 현재 페이지 (1부터 시작)
@@ -53,10 +57,18 @@ const PopEditor = (() => {
             editCanvas.on(ev, () => {
                 updateEmptyMessage();
                 syncPreview();
+
+                // ✅ 확대 모달이 열려있으면 같이 갱신
+                if (isPreviewZoomOpen) {
+                    syncPreviewZoom();
+                }
             });
         });
 
         bindCanvasPanZoom();
+
+        // ✅ 미리보기 클릭 확대 바인딩
+        bindPreviewZoom();
     }
 
     // ===== 확대/축소 & 팬 =====
@@ -146,6 +158,112 @@ const PopEditor = (() => {
         }
     }
 
+    // ✅ 확대 모달 캔버스 갱신 (열려있을 때만)
+    async function syncPreviewZoom() {
+        if (!isPreviewZoomOpen) return;
+        if (!editCanvas || !previewZoomCanvas) return;
+
+        const zoomCanvasEl = document.getElementById('previewZoomCanvas');
+        const modal = document.getElementById('previewZoomModal');
+        const content = modal ? modal.querySelector('.preview-zoom-content') : null;
+
+        if (!zoomCanvasEl || !content) return;
+
+        const w = editCanvas.getWidth();
+        const h = editCanvas.getHeight();
+
+        previewZoomCanvas.setDimensions({ width: w, height: h });
+
+        const json = editCanvas.toJSON();
+        previewZoomCanvas.clear();
+
+        try {
+            await previewZoomCanvas.loadFromJSON(json);
+            previewZoomCanvas.renderAll();
+        } catch (e) {
+            console.error('확대 미리보기 동기화 실패:', e);
+        }
+
+        // 모달 컨테이너에 맞춰 축소/확대
+        requestAnimationFrame(() => {
+            const maxW = content.clientWidth - 24;
+            const maxH = content.clientHeight - 24;
+            const scale = Math.min(maxW / w, maxH / h, 1);
+
+            zoomCanvasEl.style.transformOrigin = 'top left';
+            zoomCanvasEl.style.transform = `scale(${scale})`;
+        });
+    }
+
+    // ✅ 미리보기 클릭 확대/ESC/배경 클릭 닫기
+    function bindPreviewZoom() {
+        const previewContainer = document.getElementById('previewContainer');
+        const modal = document.getElementById('previewZoomModal');
+        if (!previewContainer || !modal) return;
+
+        const overlay = modal.querySelector('.preview-zoom-overlay');
+        const content = modal.querySelector('.preview-zoom-content');
+
+        // 미리보기 클릭 -> 확대 열기
+        previewContainer.addEventListener('click', () => {
+            openPreviewZoom();
+        });
+
+        // 배경 클릭 -> 닫기
+        if (overlay) {
+            overlay.addEventListener('click', () => closePreviewZoom());
+        }
+
+        // 모달 내부 클릭은 닫힘 방지
+        if (content) {
+            content.addEventListener('click', (e) => e.stopPropagation());
+        }
+
+        // ESC -> 닫기
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && isPreviewZoomOpen) {
+                closePreviewZoom();
+            }
+        });
+    }
+
+    async function openPreviewZoom() {
+        const modal = document.getElementById('previewZoomModal');
+        const content = modal ? modal.querySelector('.preview-zoom-content') : null;
+        const zoomCanvasEl = document.getElementById('previewZoomCanvas');
+
+        if (!modal || !content || !zoomCanvasEl) return;
+        if (!editCanvas) return;
+
+        isPreviewZoomOpen = true;
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+
+        // 1회만 Fabric 캔버스 생성
+        if (!previewZoomCanvas) {
+            previewZoomCanvas = new fabric.Canvas('previewZoomCanvas', {
+                selection: false,
+                interactive: false
+            });
+        }
+
+        await syncPreviewZoom();
+    }
+
+    function closePreviewZoom() {
+        const modal = document.getElementById('previewZoomModal');
+        const zoomCanvasEl = document.getElementById('previewZoomCanvas');
+        if (!modal) return;
+
+        isPreviewZoomOpen = false;
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
+
+        if (zoomCanvasEl) {
+            zoomCanvasEl.style.transform = 'scale(1)';
+        }
+    }
+
     // ===== 새 문서 =====
     function newWork() {
         if (!editCanvas) return;
@@ -162,6 +280,9 @@ const PopEditor = (() => {
 
         updateEmptyMessage();
         syncPreview();
+
+        // ✅ 확대 모달 열려있으면 같이 갱신
+        if (isPreviewZoomOpen) syncPreviewZoom();
     }
 
     // ===== 텍스트 추가 =====
@@ -188,6 +309,8 @@ const PopEditor = (() => {
         editCanvas.renderAll();
         updateEmptyMessage();
         syncPreview();
+
+        if (isPreviewZoomOpen) syncPreviewZoom();
     }
 
     // ===== 도형 추가 =====
@@ -221,6 +344,8 @@ const PopEditor = (() => {
         editCanvas.renderAll();
         updateEmptyMessage();
         syncPreview();
+
+        if (isPreviewZoomOpen) syncPreviewZoom();
     }
 
     // ===== 이미지 추가(파일 선택 트리거) =====
@@ -255,6 +380,8 @@ const PopEditor = (() => {
                     editCanvas.renderAll();
                     updateEmptyMessage();
                     syncPreview();
+
+                    if (isPreviewZoomOpen) syncPreviewZoom();
                 } catch (error) {
                     console.error('이미지 로드 실패:', error);
                     alert('이미지를 불러오는데 실패했습니다.');
@@ -273,6 +400,8 @@ const PopEditor = (() => {
             editCanvas.renderAll();
             updateEmptyMessage();
             syncPreview();
+
+            if (isPreviewZoomOpen) syncPreviewZoom();
         }
     }
 
@@ -303,6 +432,8 @@ const PopEditor = (() => {
 
         editCanvas.renderAll();
         syncPreview();
+
+        if (isPreviewZoomOpen) syncPreviewZoom();
     }
 
     // ===== 색상 제거 (투명하게) =====
@@ -327,6 +458,8 @@ const PopEditor = (() => {
 
         editCanvas.renderAll();
         syncPreview();
+
+        if (isPreviewZoomOpen) syncPreviewZoom();
     }
 
     // ===== 텍스트 스타일 적용 (폰트, 크기) =====
@@ -356,6 +489,8 @@ const PopEditor = (() => {
 
         editCanvas.renderAll();
         syncPreview();
+
+        if (isPreviewZoomOpen) syncPreviewZoom();
     }
 
     // ===== 앞으로, 뒤로 =====
@@ -366,6 +501,8 @@ const PopEditor = (() => {
         editCanvas.bringObjectForward(obj);
         editCanvas.renderAll();
         syncPreview();
+
+        if (isPreviewZoomOpen) syncPreviewZoom();
     }
 
     function sendBackward() {
@@ -375,6 +512,8 @@ const PopEditor = (() => {
         editCanvas.sendObjectBackwards(obj);
         editCanvas.renderAll();
         syncPreview();
+
+        if (isPreviewZoomOpen) syncPreviewZoom();
     }
 
     // ===== 템플릿 로드 =====
@@ -404,6 +543,8 @@ const PopEditor = (() => {
             editCanvas.renderAll();
             updateEmptyMessage();
             syncPreview();
+
+            if (isPreviewZoomOpen) syncPreviewZoom();
             return;
         }
 
@@ -427,6 +568,8 @@ const PopEditor = (() => {
             editCanvas.renderAll();
             updateEmptyMessage();
             syncPreview();
+
+            if (isPreviewZoomOpen) syncPreviewZoom();
         } catch (error) {
             console.error('템플릿 로드 실패:', error);
             alert('템플릿을 불러오는데 실패했습니다.');
@@ -629,8 +772,8 @@ const PopEditor = (() => {
         if (!categorySel) return;
 
         // 엔드포인트 결정
-        const url = (source === 'MY') 
-            ? '/api/templates/my/categories' 
+        const url = (source === 'MY')
+            ? '/api/templates/my/categories'
             : '/api/templates/categories';
 
         try {
@@ -643,10 +786,10 @@ const PopEditor = (() => {
             }
 
             const categories = data.categories || [];
-            
+
             // 선택박스 초기화
             categorySel.innerHTML = '<option value="">전체 카테고리</option>';
-            
+
             // 카테고리 옵션 추가
             categories.forEach(category => {
                 const option = document.createElement('option');
@@ -753,7 +896,7 @@ const PopEditor = (() => {
 
             alert('우리 매장 템플릿 저장 완료!');
             closeSaveModal();
-            
+
             // 우리 마트 템플릿으로 필터 전환
             const sourceSel = document.getElementById('templateSource');
             if (sourceSel) {

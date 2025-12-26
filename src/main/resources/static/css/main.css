@@ -597,3 +597,42 @@ body {
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
+
+/* ✅ 미리보기 클릭 확대 */
+#previewContainer { cursor: zoom-in; }
+
+/* ✅ 확대 모달 */
+.preview-zoom-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 20000;
+}
+
+.preview-zoom-modal.open {
+    display: block;
+}
+
+.preview-zoom-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+}
+
+.preview-zoom-content {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    border-radius: 12px;
+    padding: 12px;
+    max-width: 95vw;
+    max-height: 95vh;
+    overflow: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+
+#previewZoomCanvas {
+    display: block;
+}

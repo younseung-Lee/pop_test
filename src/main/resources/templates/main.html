@@ -211,7 +211,6 @@
         <div class="preview-box">
             <div class="preview-title">미리보기</div>
             <p class="preview-info">왼쪽 캔버스를 수정하면, 이 영역에 축소본으로 표시됩니다.</p>
-
             <div id="previewContainer">
                 <canvas id="previewCanvas" width="800" height="600"></canvas>
             </div>
@@ -220,6 +219,12 @@
 
 </div>
 
+<div id="previewZoomModal" class="preview-zoom-modal" aria-hidden="true">
+    <div class="preview-zoom-overlay"></div>
+    <div class="preview-zoom-content" role="dialog" aria-modal="true">
+        <canvas id="previewZoomCanvas"></canvas>
+    </div>
+</div>
 <!-- 저장 모달 -->
 <div id="saveModal" class="modal">
     <div class="modal-content">
