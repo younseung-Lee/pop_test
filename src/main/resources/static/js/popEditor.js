@@ -522,22 +522,43 @@ const PopEditor = (() => {
 
         selectedCommonTemplate = {
             tplId: el.getAttribute('data-template-id'),
+            tplSeq: el.getAttribute('data-tpl-seq'),
             bgImgUrl: el.getAttribute('data-bg'),
             layoutType: el.getAttribute('data-layout') || 'VERTICAL',
             ctgyBig: el.getAttribute('data-ctgy-big') || '',
             ctgyMid: el.getAttribute('data-ctgy-mid') || '',
             ctgySml: el.getAttribute('data-ctgy-sml') || '',
-            ctgySub: el.getAttribute('data-ctgy-sub') || ''
+            ctgySub: el.getAttribute('data-ctgy-sub') || '',
+            tplJson: el.getAttribute('data-tpl-json') || ''
         };
 
         const bgUrl = selectedCommonTemplate.bgImgUrl;
         const layoutType = selectedCommonTemplate.layoutType;
+        const tplJson = selectedCommonTemplate.tplJson;
         const { width: w, height: h } = getCanvasSizeForLayout(layoutType);
 
         editCanvas.clear();
         editCanvas.setDimensions({ width: w, height: h });
         editCanvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
 
+        // tplJson이 있으면 전체 캔버스 데이터 로드 (텍스트, 도형 포함)
+        if (tplJson) {
+            try {
+                const jsonData = JSON.parse(tplJson);
+                await editCanvas.loadFromJSON(jsonData);
+                editCanvas.renderAll();
+                updateEmptyMessage();
+                syncPreview();
+                if (isPreviewZoomOpen) syncPreviewZoom();
+                console.log('템플릿 로드 완료 (편집 데이터 포함)');
+                return;
+            } catch (error) {
+                console.warn('tplJson 파싱 실패, 배경 이미지만 로드:', error);
+                // tplJson 파싱 실패 시 배경 이미지만 로드
+            }
+        }
+
+        // tplJson이 없거나 파싱 실패 시 배경 이미지만 로드
         if (!bgUrl) {
             editCanvas.backgroundColor = '#ffffff';
             editCanvas.renderAll();
@@ -570,6 +591,7 @@ const PopEditor = (() => {
             syncPreview();
 
             if (isPreviewZoomOpen) syncPreviewZoom();
+            console.log('템플릿 로드 완료 (배경 이미지만)');
         } catch (error) {
             console.error('템플릿 로드 실패:', error);
             alert('템플릿을 불러오는데 실패했습니다.');
@@ -659,6 +681,7 @@ const PopEditor = (() => {
                     item.setAttribute('data-tpl-seq', tpl.tplSeq);
                     item.setAttribute('data-bg', tpl.bgImgUrl);
                     item.setAttribute('data-layout', tpl.layoutType);
+                    item.setAttribute('data-tpl-json', tpl.tplJson || '');
 
                     item.setAttribute('data-ctgy-big', tpl.tplCtgyBig || '');
                     item.setAttribute('data-ctgy-mid', tpl.tplCtgyMid || '');
