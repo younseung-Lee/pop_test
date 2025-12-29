@@ -295,7 +295,7 @@ body {
     position: relative;
     width: 800px;
     height: 600px;
-    background: white;
+    background: #d6d4d4;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
     border: 1px solid #ccc;
 }
