@@ -6,6 +6,7 @@
     <title>POP 작업</title>
     <link rel="stylesheet" th:href="@{/css/main.css}">
     <link rel="stylesheet" th:href="@{/css/template_delete.css}">
+    <link rel="stylesheet" th:href="@{/css/product_search.css}">
 </head>
 <body th:attr="data-user-id=${user != null ? user.id : ''}">
 <div class="header">
@@ -90,11 +91,39 @@
     <!-- 왼쪽: 템플릿 / 상품검색 -->
     <aside class="left-sidebar">
         <div class="sidebar-tabs">
-            <button class="sidebar-tab active" type="button">📑 템플릿</button>
-            <button class="sidebar-tab" type="button">🔍 상품 이미지검색</button>
+            <button class="sidebar-tab active" type="button" onclick="toggleSidebarTab('template')">📑 템플릿</button>
+            <button class="sidebar-tab" type="button" onclick="toggleSidebarTab('product')">🔍 상품 이미지검색</button>
+        </div>
+
+        <!-- 상품 이미지 검색 영역 -->
+        <div class="product-search-container" id="productSearchContainer">
+            <div class="product-search-box">
+                <div class="search-input-group">
+                    <select class="search-type-select" id="productSearchType">
+                        <option value="NAME">상품명</option>
+                        <option value="CODE">바코드</option>
+                    </select>
+                    <input type="text" 
+                           class="search-keyword-input" 
+                           id="productSearchKeyword" 
+                           placeholder="검색어를 입력하세요">
+                    <button class="search-btn" id="productSearchBtn" type="button">검색</button>
+                </div>
+                <div class="search-result-info">
+                    총 <span class="search-result-count" id="productSearchCount">0</span>개의 상품
+                </div>
+            </div>
+            
+            <div class="product-image-grid" id="productImageGrid">
+                <div class="empty-result" style="grid-column: 1 / -1;">
+                    <h3>검색어를 입력해주세요</h3>
+                    <p>상품명 또는 바코드로 검색할 수 있습니다.</p>
+                </div>
+            </div>
         </div>
 
         <!-- 템플릿 레이아웃 / 카테고리 / 소스 필터 영역 -->
+        <div class="template-container" id="templateContainer">
         <div class="sidebar-search">
             <div class="search-box">
                 <!-- 템플릿 타입: 공통 / 우리 마트 -->
@@ -193,6 +222,7 @@
                 </div>
             </div>
         </div>
+        </div>
     </aside>
 
     <!-- 가운데: 편집 캔버스 -->
@@ -262,6 +292,8 @@
 <script src="https://cdn.jsdelivr.net/npm/fabric@6.9.0/dist/index.js"></script>
 <!-- POP 에디터 스크립트 -->
 <script th:src="@{/js/popEditor.js}"></script>
+<!-- 상품 이미지 검색 스크립트 -->
+<script th:src="@{/js/productSearch.js}"></script>
 
 <script>
     function logout() {
@@ -341,6 +373,26 @@
             }
         } catch (error) {
             console.error('카테고리 로드 실패:', error);
+        }
+    }
+
+    // 사이드바 탭 전환
+    function toggleSidebarTab(type) {
+        const templateContainer = document.getElementById('templateContainer');
+        const productContainer = document.getElementById('productSearchContainer');
+        const tabs = document.querySelectorAll('.sidebar-tab');
+        
+        // 탭 활성화 상태 변경
+        tabs.forEach(tab => tab.classList.remove('active'));
+        
+        if (type === 'template') {
+            templateContainer.classList.remove('hidden');
+            productContainer.classList.remove('active');
+            tabs[0].classList.add('active');
+        } else if (type === 'product') {
+            templateContainer.classList.add('hidden');
+            productContainer.classList.add('active');
+            tabs[1].classList.add('active');
         }
     }
 
