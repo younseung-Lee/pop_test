@@ -1017,52 +1017,44 @@ const PopEditor = (() => {
         }
     });
 
-    // ===== URL로 이미지 추가 (상품 이미지 검색용) =====
-    function addImageFromUrl(imageUrl) {
-        if (!editCanvas) {
-            console.error('캔버스가 초기화되지 않았습니다.');
-            return;
-        }
+    // popEditor.js 내부 addImageFromUrl 수정
+    async function addImageFromUrl(imageUrl) {
+        if (!editCanvas) return;
 
-        if (!imageUrl) {
-            console.error('이미지 URL이 없습니다.');
-            return;
-        }
+        try {
+            // CORS 우회를 위해 프록시 사용
+            const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
+            
+            // v6 API 적용
+            const img = await fabric.FabricImage.fromURL(proxyUrl, {
+                crossOrigin: 'anonymous'
+            });
 
-        console.log('URL로 이미지 추가:', imageUrl);
-
-        // Fabric.js Image 로드
-        fabric.Image.fromURL(imageUrl, (img) => {
-            if (!img) {
-                alert('이미지를 불러올 수 없습니다.');
-                return;
-            }
-
-            // 이미지 크기 조정 (캔버스의 1/3 크기로)
             const scale = Math.min(
                 editCanvas.width / 3 / img.width,
                 editCanvas.height / 3 / img.height
             );
-            
-            img.scale(scale);
-            
-            // 캔버스 중앙에 배치
+
             img.set({
+                scaleX: scale,
+                scaleY: scale,
                 left: editCanvas.width / 2,
                 top: editCanvas.height / 2,
                 originX: 'center',
                 originY: 'center'
             });
 
-            // 캔버스에 추가
             editCanvas.add(img);
             editCanvas.setActiveObject(img);
             editCanvas.renderAll();
-
-            console.log('이미지가 캔버스에 추가되었습니다.');
-        }, {
-            crossOrigin: 'anonymous'
-        });
+            // 미리보기 동기화 호출
+            syncPreview();
+            
+            console.log('상품 이미지 추가 성공:', imageUrl);
+        } catch (error) {
+            console.error('URL 이미지 로드 실패:', error);
+            alert('이미지를 불러오는데 실패했습니다. CORS 제한일 수 있습니다.');
+        }
     }
 
     return {

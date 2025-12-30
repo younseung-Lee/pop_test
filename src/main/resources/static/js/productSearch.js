@@ -182,25 +182,30 @@ const ProductImageSearch = {
     /**
      * 캔버스에 이미지 추가 (Fabric.js 사용)
      */
-    addImageToCanvas(imageUrl) {
+    async addImageToCanvas(imageUrl) {
         const canvas = window.editCanvas || window.canvas;
-        
+
         if (!canvas) {
             alert('캔버스를 찾을 수 없습니다.');
             return;
         }
 
-        // Fabric.js Image 로드
-        fabric.Image.fromURL(imageUrl, (img) => {
-            // 이미지 크기 조정 (캔버스의 1/3 크기로)
+        try {
+            // CORS 우회를 위해 프록시 사용
+            const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
+            
+            // Fabric.js v6 방식: fabric.FabricImage.fromURL 사용
+            const img = await fabric.FabricImage.fromURL(proxyUrl, {
+                crossOrigin: 'anonymous'
+            });
+
+            // 이미지 크기 조정
             const scale = Math.min(
                 canvas.width / 3 / img.width,
                 canvas.height / 3 / img.height
             );
-            
+
             img.scale(scale);
-            
-            // 캔버스 중앙에 배치
             img.set({
                 left: canvas.width / 2,
                 top: canvas.height / 2,
@@ -208,15 +213,15 @@ const ProductImageSearch = {
                 originY: 'center'
             });
 
-            // 캔버스에 추가
             canvas.add(img);
             canvas.setActiveObject(img);
             canvas.renderAll();
-
-            console.log('이미지가 캔버스에 추가되었습니다.');
-        }, {
-            crossOrigin: 'anonymous'
-        });
+            
+            console.log('이미지 추가 성공:', imageUrl);
+        } catch (error) {
+            console.error('이미지 추가 실패:', error);
+            alert('이미지를 불러오는데 실패했습니다. CORS 제한일 수 있습니다.');
+        }
     }
 };
 
