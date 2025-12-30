@@ -1017,11 +1017,60 @@ const PopEditor = (() => {
         }
     });
 
+    // ===== URL로 이미지 추가 (상품 이미지 검색용) =====
+    function addImageFromUrl(imageUrl) {
+        if (!editCanvas) {
+            console.error('캔버스가 초기화되지 않았습니다.');
+            return;
+        }
+
+        if (!imageUrl) {
+            console.error('이미지 URL이 없습니다.');
+            return;
+        }
+
+        console.log('URL로 이미지 추가:', imageUrl);
+
+        // Fabric.js Image 로드
+        fabric.Image.fromURL(imageUrl, (img) => {
+            if (!img) {
+                alert('이미지를 불러올 수 없습니다.');
+                return;
+            }
+
+            // 이미지 크기 조정 (캔버스의 1/3 크기로)
+            const scale = Math.min(
+                editCanvas.width / 3 / img.width,
+                editCanvas.height / 3 / img.height
+            );
+            
+            img.scale(scale);
+            
+            // 캔버스 중앙에 배치
+            img.set({
+                left: editCanvas.width / 2,
+                top: editCanvas.height / 2,
+                originX: 'center',
+                originY: 'center'
+            });
+
+            // 캔버스에 추가
+            editCanvas.add(img);
+            editCanvas.setActiveObject(img);
+            editCanvas.renderAll();
+
+            console.log('이미지가 캔버스에 추가되었습니다.');
+        }, {
+            crossOrigin: 'anonymous'
+        });
+    }
+
     return {
         newWork,
         addText,
         addShape,
         addImage,
+        addImageFromUrl,
         deleteSelected,
         applyColors,
         removeColors,

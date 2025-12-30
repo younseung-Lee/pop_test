@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.pop.mapper.ProductImageMapper">
+
+    <!-- ResultMap 정의 -->
+    <resultMap id="ProductImageResultMap" type="com.example.pop.vo.ProductImageVO">
+        <id property="seqMstrPrdt" column="seq_mstr_prdt"/>
+        <result property="mstrPrdtJum" column="mstr_prdt_jum"/>
+        <result property="mstrPrdtCd" column="mstr_prdt_cd"/>
+        <result property="mstrPrdtNm" column="mstr_prdt_nm"/>
+        <result property="mstrPrdtSize" column="mstr_prdt_size"/>
+        <result property="mstrPrdtCtgyFrst" column="mstr_prdt_ctgy_frst"/>
+        <result property="mstrPrdtCtgyFrstNm" column="mstr_prdt_ctgy_frst_nm"/>
+        <result property="mstrPrdtCtgyScnd" column="mstr_prdt_ctgy_scnd"/>
+        <result property="mstrPrdtCtgyScndNm" column="mstr_prdt_ctgy_scnd_nm"/>
+        <result property="mstrPrdtCtgyThrd" column="mstr_prdt_ctgy_thrd"/>
+        <result property="mstrPrdtCtgyThrdNm" column="mstr_prdt_ctgy_thrd_nm"/>
+        <result property="mstrPrdtMUrl" column="mstr_prdt_m_url"/>
+        <result property="mstrPrdtPUrl" column="mstr_prdt_p_url"/>
+        <result property="mstrPrdtWUrl" column="mstr_prdt_w_url"/>
+        <result property="mstrPrdtUseyn" column="mstr_prdt_useyn"/>
+        <result property="mstrPrdtRgstDt" column="mstr_prdt_rgst_dt"/>
+    </resultMap>
+
+    <!-- 상품 이미지 검색 -->
+    <select id="searchProductImages" resultMap="ProductImageResultMap">
+        SELECT
+            seq_mstr_prdt,
+            mstr_prdt_jum,
+            mstr_prdt_cd,
+            mstr_prdt_nm,
+            mstr_prdt_size,
+            mstr_prdt_ctgy_frst,
+            mstr_prdt_ctgy_frst_nm,
+            mstr_prdt_ctgy_scnd,
+            mstr_prdt_ctgy_scnd_nm,
+            mstr_prdt_ctgy_thrd,
+            mstr_prdt_ctgy_thrd_nm,
+            mstr_prdt_m_url,
+            mstr_prdt_p_url,
+            mstr_prdt_w_url,
+            mstr_prdt_useyn,
+            mstr_prdt_rgst_dt
+        FROM images_store_master
+        WHERE mstr_prdt_useyn = 'Y'
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <when test="searchType == 'NAME'">
+                    AND mstr_prdt_nm LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'CODE'">
+                    AND mstr_prdt_cd LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+            </choose>
+        </if>
+        ORDER BY mstr_prdt_rgst_dt DESC
+        LIMIT 100
+    </select>
+
+    <!-- 상품 이미지 총 개수 -->
+    <select id="countProductImages" resultType="int">
+        SELECT COUNT(*)
+        FROM images_store_master
+        WHERE mstr_prdt_useyn = 'Y'
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <when test="searchType == 'NAME'">
+                    AND mstr_prdt_nm LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <when test="searchType == 'CODE'">
+                    AND mstr_prdt_cd LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+            </choose>
+        </if>
+    </select>
+
+</mapper>
