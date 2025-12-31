@@ -404,8 +404,11 @@ public class TemplateServiceImpl implements TemplateService {
     @Override
     @Transactional
     public Map<String, Object> deleteTemplate(Long tplSeq, MartIpVO user) {
-        // 관리자 권한 검증
-        validateAdminUser(user);
+        // 사용자 인증 검증
+        validateUser(user);
+        
+        String userId = user.getId();
+        boolean isAdmin = "a4".equalsIgnoreCase(userId);
 
         // 템플릿 조회
         PopTemplateVO template = popTemplateMapper.selectByTplSeq(tplSeq);
@@ -416,11 +419,32 @@ public class TemplateServiceImpl implements TemplateService {
             );
         }
 
-        // 파일 삭제 (실패해도 진행)
+        // 권한 검증
+        if (!isAdmin) {
+            // 일반 마트 계정: 자신의 우리매장 템플릿만 삭제 가능
+            if ("Y".equalsIgnoreCase(template.getIsCommon())) {
+                throw new ForbiddenException("공통 템플릿은 관리자만 삭제할 수 있습니다.");
+            }
+            
+            if (!userId.equals(template.getMartCd())) {
+                throw new ForbiddenException("다른 마트의 템플릿은 삭제할 수 없습니다.");
+            }
+        }
+        // 관리자는 모든 템플릿 삭제 가능
+
+        // 파일 삭제 (배경 이미지)
         if (template.getBgImgUrl() != null && !template.getBgImgUrl().isEmpty()) {
             boolean fileDeleted = fileStorageService.deleteFile(template.getBgImgUrl());
             if (!fileDeleted) {
-                log.warn("파일 삭제 실패 (계속 진행): {}", template.getBgImgUrl());
+                log.warn("배경 이미지 삭제 실패 (계속 진행): {}", template.getBgImgUrl());
+            }
+        }
+        
+        // 파일 삭제 (썸네일 이미지)
+        if (template.getThumbnailUrl() != null && !template.getThumbnailUrl().isEmpty()) {
+            boolean thumbnailDeleted = fileStorageService.deleteFile(template.getThumbnailUrl());
+            if (!thumbnailDeleted) {
+                log.warn("썸네일 이미지 삭제 실패 (계속 진행): {}", template.getThumbnailUrl());
             }
         }
 
@@ -433,7 +457,8 @@ public class TemplateServiceImpl implements TemplateService {
         result.put("tplNm", template.getTplNm());
         
         if (deleted > 0) {
-            log.info("템플릿 삭제 성공: tplSeq={}, tplNm={}", tplSeq, template.getTplNm());
+            log.info("템플릿 삭제 성공: userId={}, tplSeq={}, tplNm={}, isCommon={}", 
+                userId, tplSeq, template.getTplNm(), template.getIsCommon());
         }
         
         return result;

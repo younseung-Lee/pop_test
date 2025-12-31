@@ -28,6 +28,15 @@ const PopEditor = (() => {
         return LAYOUT_SIZE_MAP[lt] || { width: 800, height: 600 };
     }
 
+    // ===== 캔버스 wrapper 크기 조정 =====
+    function updateCanvasWrapperSize(width, height) {
+        const wrapper = document.querySelector('.canvas-wrapper');
+        if (!wrapper) return;
+
+        wrapper.style.width = width + 'px';
+        wrapper.style.height = height + 'px';
+    }
+
     // ===== 캔버스 초기화 =====
     function initCanvases() {
         editCanvas = new fabric.Canvas('editCanvas', {
@@ -42,6 +51,10 @@ const PopEditor = (() => {
 
         editCanvas.backgroundColor = '#ffffff';
         editCanvas.renderAll();
+        
+        // 초기 wrapper 크기 설정
+        updateCanvasWrapperSize(editCanvas.width, editCanvas.height);
+        
         updateEmptyMessage();
         syncPreview();
 
@@ -275,6 +288,9 @@ const PopEditor = (() => {
         editCanvas.renderAll();
 
         editCanvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+
+        // wrapper 크기 조정
+        updateCanvasWrapperSize(800, 600);
 
         editCanvas.renderAll();
 
@@ -540,6 +556,9 @@ const PopEditor = (() => {
         editCanvas.clear();
         editCanvas.setDimensions({ width: w, height: h });
         editCanvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+        
+        // wrapper 크기 조정
+        updateCanvasWrapperSize(w, h);
 
         // tplJson이 있으면 전체 캔버스 데이터 로드 (텍스트, 도형 포함)
         if (tplJson) {
@@ -700,9 +719,13 @@ const PopEditor = (() => {
                     img.style.borderRadius = '4px';
                     thumb.appendChild(img);
 
-                    // a4 관리자에게만 삭제 버튼 표시
-                    const isAdmin = document.querySelector('[data-user-id="a4"]');
-                    if (isAdmin) {
+                    // 삭제 버튼 표시 로직
+                    const currentUserId = document.body.getAttribute('data-user-id');
+                    const isAdmin = currentUserId === 'a4';
+                    const isMyTemplate = tpl.isCommon === 'N' && tpl.martCd === currentUserId;
+                    
+                    // a4 관리자는 모든 템플릿, 일반 마트는 자신의 우리매장 템플릿만
+                    if (isAdmin || isMyTemplate) {
                         const deleteBtn = document.createElement('button');
                         deleteBtn.className = 'delete-template-btn';
                         deleteBtn.type = 'button';

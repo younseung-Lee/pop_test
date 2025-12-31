@@ -192,11 +192,11 @@
                                  alt="템플릿"
                                  style="width:100%;height:100%;object-fit:cover;border-radius:4px;"/>
                             
-                            <!-- a4 관리자만 보이는 삭제 버튼 -->
+                            <!-- 삭제 버튼: a4 관리자는 모든 템플릿, 일반 마트는 자신의 우리매장 템플릿만 -->
                             <button class="delete-template-btn" 
                                     type="button"
                                     value="DELETE"
-                                    th:if="${user != null and user.id == 'a4'}"
+                                    th:if="${(user != null and user.id == 'a4') or (user != null and tpl.isCommon == 'N' and tpl.martCd == user.id)}"
                                     th:attr="data-tpl-seq=${tpl.tplSeq}, data-tpl-nm=${tpl.tplNm}"
                                     onclick="deleteTemplate(event, this.dataset.tplSeq, this.dataset.tplNm)"
                                     title="템플릿 삭제">
