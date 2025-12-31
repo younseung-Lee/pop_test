@@ -215,30 +215,64 @@ public class TemplateServiceImpl implements TemplateService {
 
     @Override
     @Transactional
-    public Map<String, Object> saveMyTemplate(PopTemplateVO vo, MartIpVO user) {
+    public Map<String, Object> saveMyTemplate(
+            String tplNm,
+            String layoutType,
+            String tplCtgyBig,
+            String bgImgUrl,
+            String tplCtgyMid,
+            String tplCtgySml,
+            String tplCtgySub,
+            String tplJson,
+            MultipartFile thumbnailImage,
+            MartIpVO user
+    ) {
         // 인증 검증
         validateUser(user);
-
         String martCd = user.getId();
 
         // 필수 필드 검증
-        if (vo.getTplNm() == null || vo.getTplNm().isBlank()) {
+        if (tplNm == null || tplNm.isBlank()) {
             throw new InvalidRequestException("템플릿 이름(tplNm)은 필수입니다.");
         }
 
-        if (vo.getLayoutType() == null || vo.getLayoutType().isBlank()) {
+        if (layoutType == null || layoutType.isBlank()) {
             throw new InvalidRequestException("layoutType은 필수입니다.");
         }
 
-        // 우리매장 저장 강제
+        if (tplCtgyBig == null || tplCtgyBig.isBlank()) {
+            throw new InvalidRequestException("카테고리(대)는 필수입니다.");
+        }
+
+        // 썸네일 이미지 저장
+        String thumbnailUrl = null;
+        if (thumbnailImage != null && !thumbnailImage.isEmpty()) {
+            // 이미지 파일 검증
+            if (!fileStorageService.isImageFile(thumbnailImage)) {
+                throw new InvalidRequestException("썸네일은 이미지 파일만 업로드 가능합니다.");
+            }
+            fileStorageService.validateFileSize(thumbnailImage, 10); // 10MB 제한
+            
+            // 파일 저장
+            thumbnailUrl = fileStorageService.storeFile(thumbnailImage);
+            log.info("썸네일 이미지 저장 완료: {}", thumbnailUrl);
+        }
+
+        // VO 생성
+        PopTemplateVO vo = new PopTemplateVO();
+        vo.setTplNm(tplNm);
+        vo.setLayoutType(layoutType);
+        vo.setTplCtgyBig(tplCtgyBig);
+        vo.setTplCtgyMid(tplCtgyMid);
+        vo.setTplCtgySml(tplCtgySml);
+        vo.setTplCtgySub(tplCtgySub);
+        vo.setBgImgUrl(bgImgUrl);
+        vo.setThumbnailUrl(thumbnailUrl); // 썸네일 URL 설정
+        vo.setTplJson(tplJson);
         vo.setIsCommon("N");
         vo.setMartCd(martCd);
         vo.setTplCommon("001");
-
-        if (vo.getUseYn() == null || vo.getUseYn().isBlank()) {
-            vo.setUseYn("Y");
-        }
-
+        vo.setUseYn("Y");
         vo.setRegId(martCd);
         vo.setModId(martCd);
 
@@ -248,12 +282,12 @@ public class TemplateServiceImpl implements TemplateService {
         result.put("success", inserted == 1);
         result.put("martCd", martCd);
         result.put("tplSeq", vo.getTplSeq());
+        result.put("thumbnailUrl", thumbnailUrl);
         return result;
     }
 
     /**
      * 고유한 템플릿 이름 생성
-     * 
      * 전략:
      * 1. 단일 파일: 원본 이름 그대로 사용
      * 2. 다중 파일: "원본이름_파일명" 또는 "원본이름_순번" 형식

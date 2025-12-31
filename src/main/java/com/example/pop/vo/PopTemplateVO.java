@@ -17,6 +17,7 @@ public class PopTemplateVO {
     private String tplCtgySub;
     private String layoutType;
     private String bgImgUrl;
+    private String thumbnailUrl;  // 편집된 썸네일 이미지 URL
     private String tplJson;
     private String isCommon;
     private String useYn;

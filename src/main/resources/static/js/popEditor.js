@@ -691,7 +691,8 @@ const PopEditor = (() => {
                     const thumb = document.createElement('div');
                     thumb.className = 'template-thumb';
                     const img = document.createElement('img');
-                    img.src = tpl.bgImgUrl;
+                    // 썸네일이 있으면 썸네일 사용, 없으면 배경 이미지 사용
+                    img.src = (tpl.thumbnailUrl && tpl.thumbnailUrl.trim() !== '') ? tpl.thumbnailUrl : tpl.bgImgUrl;
                     img.alt = '템플릿';
                     img.style.width = '100%';
                     img.style.height = '100%';
@@ -891,23 +892,29 @@ const PopEditor = (() => {
             return;
         }
 
-        const payload = {
-            tplNm: tplNm,
-            tplCtgyBig: ctgyBig,
-            layoutType: layoutType,
-            bgImgUrl: selectedCommonTemplate?.bgImgUrl || '',
-            tplCtgyMid: selectedCommonTemplate?.ctgyMid || '',
-            tplCtgySml: selectedCommonTemplate?.ctgySml || '',
-            tplCtgySub: selectedCommonTemplate?.ctgySub || '',
-            tplJson: JSON.stringify(editCanvas.toJSON()),
-            useYn: 'Y'
-        };
-
         try {
+            // 캔버스를 이미지로 변환 (썸네일 생성)
+            const thumbnailBlob = await canvasToBlob();
+
+            // FormData 생성
+            const formData = new FormData();
+            formData.append('tplNm', tplNm);
+            formData.append('layoutType', layoutType);
+            formData.append('tplCtgyBig', ctgyBig);
+            formData.append('bgImgUrl', selectedCommonTemplate?.bgImgUrl || '');
+            formData.append('tplCtgyMid', selectedCommonTemplate?.ctgyMid || '');
+            formData.append('tplCtgySml', selectedCommonTemplate?.ctgySml || '');
+            formData.append('tplCtgySub', selectedCommonTemplate?.ctgySub || '');
+            formData.append('tplJson', JSON.stringify(editCanvas.toJSON()));
+            
+            // 썸네일 이미지 추가
+            if (thumbnailBlob) {
+                formData.append('thumbnailImage', thumbnailBlob, 'thumbnail.png');
+            }
+
             const res = await fetch('/api/templates/my', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: formData
             });
 
             const data = await res.json().catch(() => ({}));
@@ -930,6 +937,31 @@ const PopEditor = (() => {
             console.error(e);
             alert('저장 중 오류가 발생했습니다.');
         }
+    }
+
+    // 캔버스를 Blob으로 변환
+    async function canvasToBlob() {
+        if (!editCanvas) return null;
+
+        return new Promise((resolve, reject) => {
+            try {
+                // 캔버스를 데이터 URL로 변환
+                const dataURL = editCanvas.toDataURL({
+                    format: 'png',
+                    quality: 0.8,
+                    multiplier: 1  // 원본 크기 유지
+                });
+
+                // Data URL을 Blob으로 변환
+                fetch(dataURL)
+                    .then(res => res.blob())
+                    .then(blob => resolve(blob))
+                    .catch(err => reject(err));
+            } catch (error) {
+                console.error('캔버스 변환 실패:', error);
+                reject(error);
+            }
+        });
     }
 
     // ===== DOM 이벤트 바인딩 =====

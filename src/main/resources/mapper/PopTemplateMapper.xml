@@ -18,6 +18,7 @@
         <result property="tplCtgySub"  column="tpl_ctgy_sub"/>
         <result property="layoutType"  column="layout_type"/>
         <result property="bgImgUrl"    column="bg_img_url"/>
+        <result property="thumbnailUrl" column="thumbnail_url"/>
         <result property="tplJson"     column="tpl_json"/>
         <result property="isCommon"    column="is_common"/>
         <result property="useYn"       column="use_yn"/>
@@ -40,6 +41,7 @@
         tpl_ctgy_sub,
         layout_type,
         bg_img_url,
+        thumbnail_url,
         tpl_json,
         is_common,
         use_yn,
@@ -178,6 +180,7 @@
             tpl_ctgy_sub,
             layout_type,
             bg_img_url,
+            thumbnail_url,
             tpl_json,
             is_common,
             use_yn,
@@ -196,6 +199,7 @@
                      #{tplCtgySub},
                      #{layoutType},
                      #{bgImgUrl},
+                     #{thumbnailUrl},
                      #{tplJson},
                      #{isCommon},
                      #{useYn},

@@ -78,7 +78,18 @@ public interface TemplateService {
     /**
      * 우리 매장 템플릿 저장
      */
-    Map<String, Object> saveMyTemplate(PopTemplateVO vo, MartIpVO user);
+    Map<String, Object> saveMyTemplate(
+        String tplNm,
+        String layoutType,
+        String tplCtgyBig,
+        String bgImgUrl,
+        String tplCtgyMid,
+        String tplCtgySml,
+        String tplCtgySub,
+        String tplJson,
+        MultipartFile thumbnailImage,
+        MartIpVO user
+    );
 
     /**
      * 세션에서 사용자 정보 확인 및 검증
