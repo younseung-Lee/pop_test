@@ -293,11 +293,11 @@ body {
 
 .canvas-wrapper {
     position: relative;
-    width: 800px;
-    height: 600px;
+    /* 동적 사이즈 - JavaScript에서 설정 */
     background: #d6d4d4;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
     border: 1px solid #ccc;
+    transition: all 0.3s ease;
 }
 
 .canvas {
