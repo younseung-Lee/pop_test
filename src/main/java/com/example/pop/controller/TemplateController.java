@@ -45,15 +45,23 @@ public class TemplateController {
 
     /**
      * 우리 매장 템플릿 저장 (캔버스 편집 후 저장)
-     * POST /api/templates/my (application/json)
+     * POST /api/templates/my (multipart/form-data)
      */
     @PostMapping("/templates/my")
     public Map<String, Object> saveMyTemplate(
-            @RequestBody PopTemplateVO vo,
+            @RequestParam String tplNm,
+            @RequestParam String layoutType,
+            @RequestParam String tplCtgyBig,
+            @RequestParam(required = false) String bgImgUrl,
+            @RequestParam(required = false) String tplCtgyMid,
+            @RequestParam(required = false) String tplCtgySml,
+            @RequestParam(required = false) String tplCtgySub,
+            @RequestParam String tplJson,
+            @RequestParam(required = false) MultipartFile thumbnailImage,
             HttpSession session
     ) {
         MartIpVO user = (MartIpVO) session.getAttribute("user");
-        return templateService.saveMyTemplate(vo, user);
+        return templateService.saveMyTemplate(tplNm, layoutType, tplCtgyBig, bgImgUrl, tplCtgyMid, tplCtgySml, tplCtgySub, tplJson, thumbnailImage, user);
     }
 
     /**

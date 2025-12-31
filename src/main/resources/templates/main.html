@@ -187,7 +187,8 @@
                            data-ctgy-sub=${tpl.tplCtgySub}
                          ">
                         <div class="template-thumb">
-                            <img th:src="${tpl.bgImgUrl}"
+                            <!-- 썸네일이 있으면 썸네일 사용, 없으면 배경 이미지 사용 -->
+                            <img th:src="${tpl.thumbnailUrl != null && !#strings.isEmpty(tpl.thumbnailUrl) ? tpl.thumbnailUrl : tpl.bgImgUrl}"
                                  alt="템플릿"
                                  style="width:100%;height:100%;object-fit:cover;border-radius:4px;"/>
                             
