@@ -172,8 +172,11 @@
 }
 
 /* 템플릿 컨테이너 */
-.template-container {
-    display: block;
+.template-container{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;   /* 중요: overflow가 제대로 생기게 하는 flex 트릭 */
 }
 
 .template-container.hidden {

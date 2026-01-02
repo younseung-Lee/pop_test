@@ -204,12 +204,11 @@ body {
     cursor: pointer;
 }
 
-.template-list {
+.template-list{
     flex: 1;
+    min-height: 0;   /* 중요 */
     overflow-y: auto;
-    padding: 15px;
 }
-
 .template-category {
     margin-bottom: 25px;
 }
