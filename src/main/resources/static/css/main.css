@@ -422,10 +422,44 @@ body {
     gap: 8px;
 }
 
+/* 미리보기 헤더 래퍼 */
+.preview-header-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
 .preview-title {
     font-size: 15px;
     font-weight: 600;
     color: #333;
+}
+
+/* 인쇄 버튼 스타일 */
+.print-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+    border: 1px solid #667eea;
+    background: white;
+    color: #667eea;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.print-btn:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+}
+
+.print-btn:active {
+    transform: scale(0.95);
 }
 
 .preview-info {
@@ -437,6 +471,8 @@ body {
     width: 320px;
     height: 240px; /* 미리보기 영역의 실제 보이는 크기 */
     overflow: hidden;
+    cursor: zoom-in; /* 확대 가능 표시 */
+    pointer-events: auto; /* 클릭 이벤트는 허용 (확대용) */
 }
 
 #previewCanvas {
@@ -445,6 +481,7 @@ body {
     height: 600px;
     transform-origin: top left;
     transform: scale(0.4); /* CSS로 전체를 0.4배 축소 */
+    pointer-events: none; /* 캔버스 자체는 클릭 불가 */
 }
 
 .modal-row input::placeholder {
