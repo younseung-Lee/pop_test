@@ -302,54 +302,86 @@ const PopEditor = (() => {
         }
     }
 
-    // ===== ✅ 인쇄 기능 추가 =====
-    function openPrintWindowWithImage(dataUrl) {
+    // == 인쇄 기능==
+    function openPrintWindowWithImage(dataUrl, orientation /* 'portrait' | 'landscape' */) {
         const w = window.open('', '_blank');
         if (!w) {
             alert('팝업이 차단되어 인쇄 창을 열 수 없습니다. 브라우저 팝업 허용 후 다시 시도해주세요.');
             return;
         }
 
+        const pageOrientation = (orientation === 'landscape') ? 'landscape' : 'portrait';
+
         w.document.write(`
-          <html>
-          <head>
-            <title>POP Print</title>
-            <style>
-              @page { margin: 0; }
-              body { margin: 0; }
-              img { width: 100%; height: auto; display: block; }
-            </style>
-          </head>
-          <body>
-            <img src="${dataUrl}" />
-            <script>
-              window.onload = function() {
-                window.focus();
-                window.print();
-                window.onafterprint = function(){ window.close(); };
-              };
-            <\/script>
-          </body>
-          </html>
-        `);
+      <html>
+      <head>
+        <meta charset="UTF-8" />
+        <title>POP Print</title>
+        <style>
+          @page { size: A4 ${pageOrientation}; margin: 0; }
+          html, body { width: 100%; height: 100%; margin: 0; padding: 0; }
+          body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+          }
+          /* ✅ 한 페이지 안에 "템플릿만" 맞춰서 출력 */
+          img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            display: block;
+          }
+        </style>
+      </head>
+      <body>
+        <img src="${dataUrl}" alt="POP Template"/>
+        <script>
+          window.onload = function() {
+            window.focus();
+            window.print();
+            window.onafterprint = function(){ window.close(); };
+          };
+        <\/script>
+      </body>
+      </html>
+    `);
         w.document.close();
     }
 
-    //   “현재 편집된 템플릿”을 인쇄 (미리보기와 동일한 결과)
+//  “현재 편집된 템플릿(editCanvas 결과물)”만 인쇄
     function printPreview() {
         if (!editCanvas) return;
 
-        // 인쇄 품질(선명도) 조절: 2~4 권장
+        // 가로/세로에 따라 A4 방향 자동
+        const orientation = (editCanvas.getWidth() > editCanvas.getHeight()) ? 'landscape' : 'portrait';
+
+        // 인쇄 품질(선명도): 2~4 권장
         const multiplier = 3;
 
-        // editCanvas 전체를 이미지로 export (배경/텍스트/도형/이미지 모두 포함)
-        const dataUrl = editCanvas.toDataURL({
-            format: 'png',
-            multiplier
-        });
+        // ✅ 줌/팬 상태에서도 전체가 정확히 나오도록 viewportTransform 잠깐 리셋 후 복구
+        const prevVpt = editCanvas.viewportTransform ? [...editCanvas.viewportTransform] : null;
 
-        openPrintWindowWithImage(dataUrl);
+        try {
+            editCanvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+            editCanvas.requestRenderAll();
+
+            const dataUrl = editCanvas.toDataURL({
+                format: 'png',
+                multiplier
+            });
+
+            openPrintWindowWithImage(dataUrl, orientation);
+        } finally {
+            if (prevVpt) {
+                editCanvas.setViewportTransform(prevVpt);
+            }
+            editCanvas.requestRenderAll();
+        }
     }
+
 
     // ===== 새 문서 =====
     function newWork() {
