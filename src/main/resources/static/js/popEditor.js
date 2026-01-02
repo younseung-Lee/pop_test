@@ -44,17 +44,24 @@ const PopEditor = (() => {
             selection: true
         });
 
+        // 미리보기 캔버스: 완전 비활성화 (편집 불가)
         previewCanvas = new fabric.Canvas('previewCanvas', {
-            interactive: false,
-            selection: false
+            interactive: false,     // 모든 상호작용 비활성화
+            selection: false,       // 선택 불가
+            evented: false,         // 이벤트 발생 불가
+            selectable: false       // 객체 선택 불가
         });
+
+        // 미리보기 캔버스 클릭 방지
+        previewCanvas.defaultCursor = 'default';
+        previewCanvas.hoverCursor = 'default';
 
         editCanvas.backgroundColor = '#ffffff';
         editCanvas.renderAll();
-        
+
         // 초기 wrapper 크기 설정
         updateCanvasWrapperSize(editCanvas.width, editCanvas.height);
-        
+
         updateEmptyMessage();
         syncPreview();
 
@@ -166,6 +173,12 @@ const PopEditor = (() => {
 
             previewCanvas.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
             previewCanvas.renderAll();
+            
+            // 모든 객체를 편집 불가로 설정
+            previewCanvas.getObjects().forEach(obj => {
+                obj.selectable = false;
+                obj.evented = false;
+            });
         } catch (error) {
             console.error('미리보기 동기화 실패:', error);
         }
@@ -193,6 +206,12 @@ const PopEditor = (() => {
         try {
             await previewZoomCanvas.loadFromJSON(json);
             previewZoomCanvas.renderAll();
+            
+            // 모든 객체를 편집 불가로 설정
+            previewZoomCanvas.getObjects().forEach(obj => {
+                obj.selectable = false;
+                obj.evented = false;
+            });
         } catch (e) {
             console.error('확대 미리보기 동기화 실패:', e);
         }
@@ -252,12 +271,18 @@ const PopEditor = (() => {
         modal.classList.add('open');
         modal.setAttribute('aria-hidden', 'false');
 
-        // 1회만 Fabric 캔버스 생성
+        // 1회만 Fabric 캔버스 생성 (편집 불가 모드)
         if (!previewZoomCanvas) {
             previewZoomCanvas = new fabric.Canvas('previewZoomCanvas', {
-                selection: false,
-                interactive: false
+                selection: false,      // 선택 불가
+                interactive: false,    // 상호작용 불가
+                evented: false,        // 이벤트 발생 불가
+                selectable: false      // 객체 선택 불가
             });
+            
+            // 커서 스타일 고정
+            previewZoomCanvas.defaultCursor = 'default';
+            previewZoomCanvas.hoverCursor = 'default';
         }
 
         await syncPreviewZoom();
@@ -275,6 +300,55 @@ const PopEditor = (() => {
         if (zoomCanvasEl) {
             zoomCanvasEl.style.transform = 'scale(1)';
         }
+    }
+
+    // ===== ✅ 인쇄 기능 추가 =====
+    function openPrintWindowWithImage(dataUrl) {
+        const w = window.open('', '_blank');
+        if (!w) {
+            alert('팝업이 차단되어 인쇄 창을 열 수 없습니다. 브라우저 팝업 허용 후 다시 시도해주세요.');
+            return;
+        }
+
+        w.document.write(`
+          <html>
+          <head>
+            <title>POP Print</title>
+            <style>
+              @page { margin: 0; }
+              body { margin: 0; }
+              img { width: 100%; height: auto; display: block; }
+            </style>
+          </head>
+          <body>
+            <img src="${dataUrl}" />
+            <script>
+              window.onload = function() {
+                window.focus();
+                window.print();
+                window.onafterprint = function(){ window.close(); };
+              };
+            <\/script>
+          </body>
+          </html>
+        `);
+        w.document.close();
+    }
+
+    //   “현재 편집된 템플릿”을 인쇄 (미리보기와 동일한 결과)
+    function printPreview() {
+        if (!editCanvas) return;
+
+        // 인쇄 품질(선명도) 조절: 2~4 권장
+        const multiplier = 3;
+
+        // editCanvas 전체를 이미지로 export (배경/텍스트/도형/이미지 모두 포함)
+        const dataUrl = editCanvas.toDataURL({
+            format: 'png',
+            multiplier
+        });
+
+        openPrintWindowWithImage(dataUrl);
     }
 
     // ===== 새 문서 =====
@@ -556,7 +630,7 @@ const PopEditor = (() => {
         editCanvas.clear();
         editCanvas.setDimensions({ width: w, height: h });
         editCanvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-        
+
         // wrapper 크기 조정
         updateCanvasWrapperSize(w, h);
 
@@ -723,7 +797,7 @@ const PopEditor = (() => {
                     const currentUserId = document.body.getAttribute('data-user-id');
                     const isAdmin = currentUserId === 'a4';
                     const isMyTemplate = tpl.isCommon === 'N' && tpl.martCd === currentUserId;
-                    
+
                     // a4 관리자는 모든 템플릿, 일반 마트는 자신의 우리매장 템플릿만
                     if (isAdmin || isMyTemplate) {
                         const deleteBtn = document.createElement('button');
@@ -929,7 +1003,7 @@ const PopEditor = (() => {
             formData.append('tplCtgySml', selectedCommonTemplate?.ctgySml || '');
             formData.append('tplCtgySub', selectedCommonTemplate?.ctgySub || '');
             formData.append('tplJson', JSON.stringify(editCanvas.toJSON()));
-            
+
             // 썸네일 이미지 추가
             if (thumbnailBlob) {
                 formData.append('thumbnailImage', thumbnailBlob, 'thumbnail.png');
@@ -1079,7 +1153,7 @@ const PopEditor = (() => {
         try {
             // CORS 우회를 위해 프록시 사용
             const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(imageUrl)}`;
-            
+
             // v6 API 적용
             const img = await fabric.FabricImage.fromURL(proxyUrl, {
                 crossOrigin: 'anonymous'
@@ -1104,7 +1178,7 @@ const PopEditor = (() => {
             editCanvas.renderAll();
             // 미리보기 동기화 호출
             syncPreview();
-            
+
             console.log('상품 이미지 추가 성공:', imageUrl);
         } catch (error) {
             console.error('URL 이미지 로드 실패:', error);
@@ -1129,7 +1203,10 @@ const PopEditor = (() => {
         saveWork,
         showSaveModal,
         closeSaveModal,
-        confirmSave
+        confirmSave,
+
+        // ✅ 추가
+        printPreview
     };
 })();
 

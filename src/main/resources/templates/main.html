@@ -241,7 +241,12 @@
     <!-- 오른쪽: 미리보기 -->
     <aside class="right-preview">
         <div class="preview-box">
-            <div class="preview-title">미리보기</div>
+            <div class="preview-header-wrapper">
+                <div class="preview-title">미리보기</div>
+                <button class="print-btn" type="button" onclick="printPreview()" title="미리보기 인쇄">
+                    🖨️ 인쇄
+                </button>
+            </div>
             <p class="preview-info">왼쪽 캔버스를 수정하면, 이 영역에 축소본으로 표시됩니다.</p>
             <div id="previewContainer">
                 <canvas id="previewCanvas" width="800" height="600"></canvas>
@@ -401,6 +406,94 @@
     window.addEventListener('DOMContentLoaded', function() {
         loadCategories();
     });
+
+    /**
+     * 미리보기 Canvas 인쇄 함수
+     */
+    function printPreview() {
+        const canvas = document.getElementById('previewCanvas');
+        
+        if (!canvas) {
+            alert('미리보기 영역을 찾을 수 없습니다.');
+            return;
+        }
+        
+        // Canvas가 비어있는지 확인
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const isEmpty = !imageData.data.some(channel => channel !== 0);
+        
+        if (isEmpty) {
+            alert('인쇄할 내용이 없습니다.');
+            return;
+        }
+        
+        // Canvas를 고해상도 이미지로 변환 (2배 스케일)
+        const scale = 2;
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width * scale;
+        tempCanvas.height = canvas.height * scale;
+        
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.scale(scale, scale);
+        tempCtx.drawImage(canvas, 0, 0);
+        
+        const dataUrl = tempCanvas.toDataURL('image/png', 1.0);
+        
+        // 인쇄용 팝업 창 생성
+        const printWindow = window.open('', '_blank', 'width=900,height=700');
+        
+        if (!printWindow) {
+            alert('팝업 차단을 해제해주세요.');
+            return;
+        }
+        
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>POP 인쇄</title>
+                <style>
+                    * { 
+                        margin: 0; 
+                        padding: 0; 
+                        box-sizing: border-box; 
+                    }
+                    body {
+                        margin: 0;
+                        padding: 0;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        min-height: 100vh;
+                    }
+                    img {
+                        max-width: 100%;
+                        height: auto;
+                        display: block;
+                    }
+                    @media print {
+                        body { 
+                            margin: 0;
+                            padding: 0;
+                        }
+                        img {
+                            max-width: 100%;
+                            height: auto;
+                            page-break-inside: avoid;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                <img src="${dataUrl}" alt="POP 템플릿" onload="window.print(); window.close();" />
+            </body>
+            </html>
+        `);
+        
+        printWindow.document.close();
+    }
 </script>
 </body>
 </html>
