@@ -819,10 +819,6 @@ const PopEditor = (() => {
                     // 썸네일이 있으면 썸네일 사용, 없으면 배경 이미지 사용
                     img.src = (tpl.thumbnailUrl && tpl.thumbnailUrl.trim() !== '') ? tpl.thumbnailUrl : tpl.bgImgUrl;
                     img.alt = '템플릿';
-                    img.style.width = '100%';
-                    img.style.height = '100%';
-                    img.style.objectFit = 'cover';
-                    img.style.borderRadius = '4px';
                     thumb.appendChild(img);
 
                     // 삭제 버튼 표시 로직
